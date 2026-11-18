@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
+  <!-- Fitur PWA (Progressive Web App) & Mobile Native Feel -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" id="pwa-manifest">
+  
+  <title>CBT Siswa - Enterprise Edition</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Pustaka Render Rumus Matematika (LaTeX / MathJax) -->
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1",
+        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.378.0?deps=react@18.3.1,react-dom@18.3.1"
+      }
+    }
+  </script>
+
+  <style>
+    html, body {
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+    #root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .modal-overlay { z-index: 9999; }
+    .prevent-select { user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+    .touch-none { touch-action: none; } /* Penting untuk scratchpad di HP */
+  </style>
+  <script>
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      document.write('<script src="./gas-config.js"><\/script><script src="./gas-bridge.js"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen overflow-x-hidden overflow-y-auto">
+  <div id="root"></div>
+
+  <script>
+    // INJEKSI MANIFEST PWA OTOMATIS
+    const manifest = {
+        name: "CBT Ujian Siswa",
+        short_name: "CBT Siswa",
+        display: "standalone",
+        background_color: "#f8fafc",
+        theme_color: "#4f46e5",
+        icons: [{"src": "https://cdn-icons-png.flaticon.com/512/3135/3135679.png", "sizes": "512x512", "type": "image/png"}]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+  </script>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { User, Key, ArrowRight, ArrowLeft, Send, CheckCircle, AlertTriangle, MonitorSmartphone, ShieldAlert, FileText, Info, Eye, EyeOff, LogOut, ZoomIn, ZoomOut, Palette, Camera, UserCheck, Monitor, Cpu, RefreshCw, CheckSquare, MapPin, Lock, Volume2, ChevronDown, Check } from 'lucide-react';
+
+    // ===== FOOTER SECURITY - INTEGRITY GUARD (ANTI-TAMPER) =====
+    const _F = (() => {
+        const H = '4372656174656420616e642044657369676e206279204a6573736520522e4e696b696a756c75772c2053542e';
+        let t = '';
+        for (let i = 0; i < H.length; i += 2)
+            t += String.fromCharCode(parseInt(H.substring(i, i+2), 16));
+        return t;
+    })();
+    const _hA = '87709f63';
+    const _hB = '753dfc15';
+    const _footerHash = _hA + _hB;
+    const _breakApp = (code) => {
+        try {
+            const r = document.getElementById('root');
+            if (r) r.innerHTML = '';
+            document.title = 'APLIKASI DINONAKTIFKAN - INTEGRITAS TERGANGGU';
+        } catch(e) {}
+        throw new Error('Integritas aplikasi terganggu (Kode: ' + code + ')');
+    };
+    const _verifyFooter = (() => {
+        let _armed = false;
+        let _miss = 0;
+        setInterval(() => {
+            try {
+                const el = document.getElementById('app-footer');
+                if (!el) { if (_armed || ++_miss >= 5) return _breakApp('E01'); return; }
+                const txt = (el.textContent || '').trim();
+                if (!txt.includes(_F)) { if (_armed || ++_miss >= 5) return _breakApp('E02'); return; }
+                let h1 = 0x811c9dc5, h2 = 0x01000193;
+                for (let i = 0; i < txt.length; i++) {
+                    const c = txt.charCodeAt(i);
+                    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+                    h2 = Math.imul(h2 ^ c, 0x01000193) >>> 0;
+                }
+                const hash = ('00000000' + h1.toString(16)).slice(-8) + ('00000000' + h2.toString(16)).slice(-8);
+                if (hash !== _footerHash) { if (_armed || ++_miss >= 5) return _breakApp('E03'); return; }
+                _armed = true;
+                _miss = 0;
+            } catch(e) {}
+        }, 10000);
+        return () => {};
+    })();
+
+    const cbtIDB = {
+      dbName: 'CBT_ENTERPRISE_DB',
+      version: 1,
+      open() {
+          return new Promise((resolve) => {
+              if (!window.indexedDB) return resolve(null);
+              const req = indexedDB.open(this.dbName, this.version);
+              req.onupgradeneeded = (e) => {
+                  const db = e.target.result;
+                  if (!db.objectStoreNames.contains('soal_pool')) db.createObjectStore('soal_pool', { keyPath: 'nis' });
+                  if (!db.objectStoreNames.contains('session_state')) db.createObjectStore('session_state', { keyPath: 'nis' });
+                  if (!db.objectStoreNames.contains('offline_queue')) db.createObjectStore('offline_queue', { keyPath: 'id', autoIncrement: true });
+              };
+              req.onsuccess = () => resolve(req.result);
+              req.onerror = () => resolve(null);
+          });
+      },
+      async setSoal(nis, soalList) {
+          try {
+              const db = await this.open();
+              if (!db) return;
+              const tx = db.transaction('soal_pool', 'readwrite');
+              tx.objectStore('soal_pool').put({ nis, soalList, timestamp: Date.now() });
+          } catch(e) {}
+      },
+      async getSoal(nis) {
+          try {
+              const db = await this.open();
+              if (!db) return null;
+              return new Promise((resolve) => {
+                  const tx = db.transaction('soal_pool', 'readonly');
+                  const req = tx.objectStore('soal_pool').get(nis);
+                  req.onsuccess = () => resolve(req.result ? req.result.soalList : null);
+                  req.onerror = () => resolve(null);
+              });
+          } catch(e) { return null; }
+      },
+      async addOfflineSubmit(payload) {
+          try {
+              const db = await this.open();
+              if (!db) return;
+              const tx = db.transaction('offline_queue', 'readwrite');
+              tx.objectStore('offline_queue').add(payload);
+          } catch(e) {}
+      },
+      async getOfflineSubmits() {
+          try {
+              const db = await this.open();
+              if (!db) return [];
+              return new Promise((resolve) => {
+                  const tx = db.transaction('offline_queue', 'readonly');
+                  const req = tx.objectStore('offline_queue').getAll();
+                  req.onsuccess = () => resolve(req.result || []);
+                  req.onerror = () => resolve([]);
+              });
+          } catch(e) { return []; }
+      },
+      async clearOfflineSubmits() {
+          try {
+              const db = await this.open();
+              if (!db) return;
+              const tx = db.transaction('offline_queue', 'readwrite');
+              tx.objectStore('offline_queue').clear();
+          } catch(e) {}
+      }
+    };
+
+    const LimitedAudioPlayer = ({ url, limit }) => {
+        const [played, setPlayed] = React.useState(0);
+        const [keyPlay, setKeyPlay] = React.useState(0);
+        const [countdown, setCountdown] = React.useState(0);
+        const [isPlaying, setIsPlaying] = React.useState(false);
+        const audioRef = React.useRef(null);
+        const maxPlay = parseInt(limit || '2', 10) || 2;
+
+        const startListeningFlow = () => {
+            if (isPlaying || countdown > 0) return;
+            if (played >= maxPlay) { 
+                alert('Batas pemutaran audio listening soal ini sudah habis (' + maxPlay + 'x).'); 
+                return; 
+            }
+            // Mulai jeda persiapan membaca soal 5 detik
+            setCountdown(5);
+            const interval = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        // Mulai audio
+                        setPlayed(p => p + 1);
+                        setKeyPlay(k => k + 1);
+                        setIsPlaying(true);
+                        setTimeout(() => { 
+                            try { 
+                                if (audioRef.current) audioRef.current.play(); 
+                            } catch(e) {} 
+                        }, 100);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        };
+
+        const handleAudioEnded = () => {
+            setIsPlaying(false);
+        };
+
+        return (
+            <div className="mt-3 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        {countdown > 0 ? (
+                            <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-black shadow animate-pulse">
+                                <span>⏳</span> Memulai dalam {countdown} detik... (Baca Soal)
+                            </div>
+                        ) : isPlaying ? (
+                            <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black shadow">
+                                <span className="flex gap-1 items-end h-4">
+                                    <span className="w-1 bg-white animate-bounce h-2"></span>
+                                    <span className="w-1 bg-white animate-bounce h-4"></span>
+                                    <span className="w-1 bg-white animate-bounce h-3"></span>
+                                </span>
+                                Sedang Memutar Audio... ({played}/{maxPlay})
+                            </div>
+                        ) : (
+                            <button 
+                                type="button" 
+                                onClick={startListeningFlow} 
+                                disabled={played >= maxPlay}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow transition-all ${
+                                    played >= maxPlay 
+                                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                                }`}
+                            >
+                                <span>▶</span> {played === 0 ? 'Mulai Listening (Jeda 5 Detik)' : `Putar Lagi (${played}/${maxPlay})`}
+                            </button>
+                        )}
+                        <audio 
+                            key={keyPlay} 
+                            ref={audioRef} 
+                            src={url} 
+                            onEnded={handleAudioEnded}
+                            className="hidden" 
+                            preload="auto" 
+                        />
+                    </div>
+                    <div className="text-right sm:text-right">
+                        <span className="text-[11px] font-bold text-indigo-900 block">Sisa Pemutaran: {Math.max(0, maxPlay - played)}x</span>
+                        <span className="text-[9.5px] text-slate-500">Standar Listening ANBK & Asesmen Bahasa</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // ===== SHA-256 Signature (Verifikasi Keaslian Jawaban, 100% lokal di browser - tanpa API berbayar) =====
+    const generateSHA256 = async (text) => {
+        try {
+            if (window.crypto && window.crypto.subtle) {
+                const data = new TextEncoder().encode(String(text || ''));
+                const buf = await window.crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            // Fallback offline (FNV-1a 64-bit) bila WebCrypto tidak tersedia
+            let h1 = 0x811c9dc5, h2 = 0x01000193;
+            const str = String(text || '');
+            for (let i = 0; i < str.length; i++) {
+                const c = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+                h2 = Math.imul(h2 ^ c, 0x01000193) >>> 0;
+            }
+            return ('00000000' + h1.toString(16)).slice(-8) + ('00000000' + h2.toString(16)).slice(-8);
+        } catch (e) {
+            return String(text || '').split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7).toString(16);
+        }
+    };
+
+    const evaluateSoalCorrectness = (soal, userAns) => {
+        if (userAns === undefined || userAns === null || userAns === '-' || userAns === '') return false;
+        const tipe = (soal.tipe || 'PG').toUpperCase();
+        const kunci = String(soal.kunci || '').trim();
+        if (!kunci) return false;
+
+        // Penanganan khusus soal langsung dari Google Form (menyimpan nilai pilihan asli)
+        if (soal.itemId && (tipe === 'PG' || tipe === 'DROPDOWN')) {
+            const idx = (soal.opsi || []).indexOf(String(userAns));
+            if (idx === -1) return false;
+            const letter = String.fromCharCode(65 + idx);
+            return letter === kunci.substring(0, 1).toUpperCase();
+        }
+        if (soal.itemId && tipe === 'PG_KOMPLEKS') {
+            const kunciSet = new Set(kunci.split(',').map(s => s.trim().substring(0,1).toUpperCase()).filter(Boolean));
+            const selectedArr = Array.isArray(userAns) ? userAns : String(userAns).split('|||').filter(Boolean);
+            const userLetters = selectedArr.map(val => {
+                const idx = (soal.opsi || []).indexOf(val);
+                return idx >= 0 ? String.fromCharCode(65 + idx) : '';
+            }).filter(Boolean);
+            const userSet = new Set(userLetters);
+            if (kunciSet.size !== userSet.size) return false;
+            for (let k of kunciSet) { if (!userSet.has(k)) return false; }
+            return true;
+        }
+
+        if (tipe === 'PG_KOMPLEKS') {
+            const kunciSet = new Set(kunci.split(',').map(s => s.trim().substring(0,1).toUpperCase()));
+            const userTokens = String(userAns).split(',').map(s => s.trim().substring(0,1).toUpperCase()).filter(Boolean);
+            const userSet = new Set(userTokens);
+            if (kunciSet.size !== userSet.size) return false;
+            for (let k of kunciSet) {
+                if (!userSet.has(k)) return false;
+            }
+            return true;
+        } else if (tipe === 'BENAR_SALAH') {
+            const cleanKunci = kunci.replace(/\s+/g, '').toUpperCase();
+            const cleanAns = String(userAns).replace(/\s+/g, '').toUpperCase();
+            return cleanKunci === cleanAns;
+        } else if (tipe === 'MENJODOHKAN') {
+            const cleanKunciSet = new Set(kunci.split(',').map(s => s.trim().toUpperCase()));
+            const cleanAnsSet = new Set(String(userAns).split(',').map(s => s.trim().toUpperCase()));
+            if (cleanKunciSet.size !== cleanAnsSet.size) return false;
+            for (let k of cleanKunciSet) {
+                if (!cleanAnsSet.has(k)) return false;
+            }
+            return true;
+        } else if (tipe === 'ISIAN') {
+            const cleanK = kunci.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const cleanA = String(userAns).toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!cleanA) return false;
+            if (cleanK === cleanA) return true;
+            if (cleanK.length >= 4 && (cleanK.includes(cleanA) || cleanA.includes(cleanK))) return true;
+            return false;
+        } else if (tipe === 'ESAI') {
+            const requiredKeywords = kunci.split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+            if (requiredKeywords.length === 0) return true;
+            const essayText = String(userAns).toLowerCase();
+            let matchedCount = 0;
+            requiredKeywords.forEach(kw => { if (essayText.includes(kw)) matchedCount++; });
+            const scoreRatio = matchedCount / requiredKeywords.length;
+            return scoreRatio >= 0.65;
+        } else if (tipe === 'SIMULASI_LAB') {
+            const parseNum = (s) => parseFloat(String(s).replace(/,/g, '.').replace(/[^0-9.\-]/g, ''));
+            const userNum = parseNum(userAns);
+            const keyNum = parseNum(kunci);
+            if (isNaN(userNum) || isNaN(keyNum)) return false;
+            const absDiff = Math.abs(userNum - keyNum);
+            const relDiff = keyNum !== 0 ? absDiff / Math.abs(keyNum) : absDiff;
+            return absDiff <= 0.05 || relDiff <= 0.025;
+        } else {
+            return String(userAns).substring(0,1).toUpperCase() === kunci.substring(0,1).toUpperCase();
+        }
+    };
+
+    const GFormDropdown = ({ value, options, placeholder = 'Pilih', onChange, className = '', buttonClassName = '' }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const wrapRef = useRef(null);
+        useEffect(() => {
+            if (!isOpen) return;
+            const onOutside = (e) => {
+                if (wrapRef.current && !wrapRef.current.contains(e.target)) setIsOpen(false);
+            };
+            document.addEventListener('mousedown', onOutside);
+            document.addEventListener('touchstart', onOutside);
+            return () => {
+                document.removeEventListener('mousedown', onOutside);
+                document.removeEventListener('touchstart', onOutside);
+            };
+        }, [isOpen]);
+        const normalizedOpts = (options || []).map(opt =>
+            (opt && typeof opt === 'object')
+                ? { value: String(opt.value ?? ''), label: String(opt.label ?? opt.value ?? '') }
+                : { value: String(opt ?? ''), label: String(opt ?? '') }
+        );
+        const selectedObj = normalizedOpts.find(o => o.value === String(value || ''));
+        return (
+            <div ref={wrapRef} className={`relative ${className || 'w-full sm:w-80'}`}>
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(prev => !prev)}
+                    className={buttonClassName || 'w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-md text-sm text-slate-800 font-medium focus:border-[#673ab7] focus:ring-1 focus:ring-[#673ab7] outline-none flex items-center justify-between gap-2 text-left'}
+                >
+                    <span className={selectedObj ? 'text-slate-800 truncate' : 'text-slate-400 truncate'}>
+                        {selectedObj ? selectedObj.label : placeholder}
+                    </span>
+                    <ChevronDown size={16} className={`text-slate-500 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-[#673ab7]' : ''}`} />
+                </button>
+                {isOpen && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto py-1">
+                        <button
+                            type="button"
+                            onClick={() => { onChange(''); setIsOpen(false); }}
+                            className={`w-full text-left px-3.5 py-2 text-sm hover:bg-purple-50 transition-colors ${!value ? 'bg-purple-50 text-[#673ab7] font-semibold' : 'text-slate-500'}`}
+                        >
+                            {placeholder}
+                        </button>
+                        {normalizedOpts.map((opt, idx) => {
+                            const active = String(value || '') === opt.value;
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                                    className={`w-full text-left px-3.5 py-2.5 text-sm hover:bg-purple-50 transition-colors flex items-center justify-between gap-2 ${active ? 'bg-purple-50 text-[#673ab7] font-bold' : 'text-slate-800'}`}
+                                >
+                                    <span className="truncate">{opt.label}</span>
+                                    {active && <Check size={14} className="text-[#673ab7] shrink-0" />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const Footer = () => {
+        
+        return (
+            <div id="app-footer" className="text-center text-[10px] font-bold text-slate-400 leading-relaxed px-2 py-2 border-t border-slate-200/60">
+                &copy; 2026 Created and Design by Jesse R.Nikijuluw, ST. All rights reserved.
+            </div>
+        );
+    };
+
+    const App = () => {
+      const [user, setUser] = useState(() => {
+          const savedUser = localStorage.getItem('cbt_siswa_user');
+          return savedUser ? JSON.parse(savedUser) : null;
+      });
+      const [view, setView] = useState(() => {
+          return localStorage.getItem('cbt_siswa_user') ? 'intro' : 'login';
+      }); 
+
+      const [isLoading, setIsLoading] = useState(false);
+      const [loginForm, setLoginForm] = useState({ nis: '', password: '' });
+      
+      const [soalList, setSoalList] = useState([]);
+      const [jawaban, setJawaban] = useState({});
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [faceStatus, setFaceStatus] = useState('1 Wajah Terdeteksi (Normal)');
+      const [catLevel, setCatLevel] = useState('SEDANG');
+      const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+      const [syncingOffline, setSyncingOffline] = useState(false);
+      
+      const [timeLeft, setTimeLeft] = useState(7200); 
+      const [errorMessage, setErrorMessage] = useState('');
+      const [resumeMessage, setResumeMessage] = useState('');
+      
+      const [appSettings, setAppSettings] = useState({
+          nama_instansi: 'KEMENTERIAN PENDIDIKAN',
+          nama_sekolah: 'NAMA SEKOLAH',
+          logo_sekolah: '',
+          acak_soal: 'Ya',
+          ujian_ketat: 'Ya',
+          token: '',
+          nama_ujian: 'Ujian Akhir Semester'
+      });
+      
+      const [cheatWarning, setCheatWarning] = useState(false);
+      const [lockdownViolationMsg, setLockdownViolationMsg] = useState('');
+      const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+      const [fullscreenWarning, setFullscreenWarning] = useState(false);
+      const [showTimeWarning, setShowTimeWarning] = useState(false);
+      const [warningTriggered, setWarningTriggered] = useState(false);
+      const [isAgreed, setIsAgreed] = useState(false);
+      const [submitStatusText, setSubmitStatusText] = useState('');
+      const [showPassword, setShowPassword] = useState(false);
+
+      const isAndroidDevice = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '');
+      const isAndroidApk = typeof window !== 'undefined' && (Boolean(window.AndroidExambro) || /CBT-Exambro-Android/i.test(navigator.userAgent || ''));
+
+      // GOOGLE FORM MODE STATE
+      const [gformMeta, setGformMeta] = useState(null);
+      const [activeSection, setActiveSection] = useState(0);
+      const [missingRequiredId, setMissingRequiredId] = useState(null);
+      const [audioStatus, setAudioStatus] = useState('Normal');
+
+      // AKSESIBILITAS & UTILITAS
+      const [fontSize, setFontSize] = useState(16); 
+      const [showPad, setShowPad] = useState(false);
+      const [isDrawing, setIsDrawing] = useState(false);
+      const [selectedRuang, setSelectedRuang] = useState(() => {
+          try {
+              const savedUser = localStorage.getItem('cbt_siswa_user');
+              if (savedUser) {
+                  const u = JSON.parse(savedUser);
+                  return localStorage.getItem(`cbt_ruang_${u.nis}`) || u.selectedRuang || '';
+              }
+          } catch(e) {}
+          return '';
+      });
+
+      const [showSubmitConfirmModal, setShowSubmitConfirmModal] = useState(false);
+      const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+      const canvasRef = useRef(null);
+      const videoRef = useRef(null);
+      const streamRef = useRef(null);
+      const jawabanRef = useRef(jawaban);
+      const timeLeftRef = useRef(timeLeft);
+      const soalListRef = useRef(soalList);
+      const gformMetaRef = useRef(gformMeta);
+      const userRef = useRef(user);
+      const appSettingsRef = useRef(appSettings);
+      const lastSyncedRuangRef = useRef('');
+      const selectedRuangRef = useRef(selectedRuang);
+      const alarmCtxRef = useRef(null);
+      const alarmTimerRef = useRef(null);
+      const lastCheatReportRef = useRef(0);
+      const isExamFinishedRef = useRef(false);
+      const baselineScreenRef = useRef({ w: typeof window !== 'undefined' ? window.innerWidth : 0, h: typeof window !== 'undefined' ? window.innerHeight : 0 });
+
+      const normalizeRoomCanonical = (val) => {
+          const raw = String(val || '').trim();
+          if (!raw) return '';
+          const cleaned = raw.toLowerCase().replace(/[-_.]+/g, ' ').replace(/\s+/g, ' ').replace(/\b0+(\d+)/g, '$1');
+          const m = cleaned.match(/^(?:ruang|ruangan|r)?\s*(\d{1,2})$/i);
+          if (m) return `Ruang ${parseInt(m[1], 10)}`;
+          return raw;
+      };
+
+      const handleSelectRuangSiswa = (val) => {
+          const cleanVal = normalizeRoomCanonical(val);
+          setSelectedRuang(cleanVal);
+          selectedRuangRef.current = cleanVal;
+          if (user && user.nis) {
+              const updatedUser = { ...user, selectedRuang: cleanVal };
+              setUser(updatedUser);
+              try {
+                  localStorage.setItem('cbt_siswa_user', JSON.stringify(updatedUser));
+                  if (cleanVal) localStorage.setItem(`cbt_ruang_${user.nis}`, cleanVal);
+                  else localStorage.removeItem(`cbt_ruang_${user.nis}`);
+              } catch(e) {}
+              if (cleanVal && typeof google !== 'undefined' && google.script) {
+                  lastSyncedRuangRef.current = cleanVal;
+                  google.script.run.saveRuangSiswa(user.nis, cleanVal);
+              }
+          }
+      };
+
+      const extractGFormFieldByKeyword = (questions, ansMap, regex) => {
+          if (!Array.isArray(questions) || !ansMap) return '';
+          for (const q of questions) {
+              if (!q || ['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)) continue;
+              const labelText = `${q.text || ''} ${q.helpText || ''}`;
+              if (regex.test(labelText)) {
+                  const val = ansMap[q.id];
+                  if (val !== undefined && val !== null && typeof val !== 'object' && String(val).trim() !== '') {
+                      return String(val).trim();
+                  }
+              }
+          }
+          return '';
+      };
+
+      const extractGFormRuang = (questions, ansMap) => {
+          const byTitle = extractGFormFieldByKeyword(questions, ansMap, /ruang|room|r\.\s*ujian/i);
+          if (byTitle) return normalizeRoomCanonical(byTitle);
+          if (Array.isArray(questions) && ansMap) {
+              for (const q of questions) {
+                  if (!q || ['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)) continue;
+                  const val = ansMap[q.id];
+                  if (val !== undefined && val !== null && typeof val !== 'object') {
+                      const s = String(val).trim();
+                      if (/^(?:ruang|ruangan)\s*[-_.]?\s*0*(?:\d{1,2})$/i.test(s)) return normalizeRoomCanonical(s);
+                  }
+              }
+          }
+          return normalizeRoomCanonical(selectedRuangRef.current || '');
+      };
+
+      useEffect(() => {
+          jawabanRef.current = jawaban;
+          timeLeftRef.current = timeLeft;
+          soalListRef.current = soalList;
+          gformMetaRef.current = gformMeta;
+          userRef.current = user;
+          appSettingsRef.current = appSettings;
+          selectedRuangRef.current = selectedRuang;
+      }, [jawaban, timeLeft, soalList, gformMeta, user, appSettings, selectedRuang]);
+
+      // RENDER RUMUS MATHJAX LATEX & AUTO-SCROLL PETA NAVIGASI
+      useEffect(() => {
+          if (window.MathJax && window.MathJax.typesetPromise) {
+              window.MathJax.typesetPromise();
+          }
+          try {
+              const navBtn = document.getElementById(`nav-soal-${currentIndex}`);
+              if (navBtn) {
+                  navBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+          } catch(e) {}
+      }, [currentIndex, view, soalList, fontSize]);
+
+      // AKSES WEBCAM SECARA DIAM-DIAM TIAP 45 DETIK
+      useEffect(() => {
+          if (view === 'ujian') {
+              startWebcam();
+              const captureInterval = setInterval(() => { capturePhotoAndSend(); }, 45000);
+              const livenessTimer = setInterval(() => {
+                  if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
+                  try {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = 64; canvas.height = 48;
+                      const ctx = canvas.getContext('2d');
+                      ctx.drawImage(videoRef.current, 0, 0, 64, 48);
+                      const imgData = ctx.getImageData(0, 0, 64, 48).data;
+                      let skinPixels = 0;
+                      for (let i = 0; i < imgData.length; i += 4) {
+                          const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+                          if (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15) skinPixels++;
+                      }
+                      let leftSkin = 0; let rightSkin = 0;
+                      for (let i = 0; i < imgData.length; i += 4) {
+                          const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+                          if (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15) {
+                              const pixelIdx = i / 4;
+                              const x = pixelIdx % 64;
+                              if (x < 24) leftSkin++;
+                              else if (x > 40) rightSkin++;
+                          }
+                      }
+                      if (skinPixels < 80) {
+                          setFaceStatus('Wajah Tidak Terdeteksi');
+                          setCheatWarning(true);
+                          if (user && user.nis) google.script.run.laporKecurangan(user.nis, user.nama);
+                      } else if (skinPixels > 1600) {
+                          setFaceStatus('Anomali Wajah / Multi-Wajah');
+                          capturePhotoAndSend();
+                          if (user && user.nis) google.script.run.laporKecurangan(user.nis, user.nama);
+                      } else if (appSettings.ai_gaze === 'Ya' && skinPixels > 100 && Math.abs(leftSkin - rightSkin) / skinPixels > 0.65) {
+                          setFaceStatus('Anomali Arah Pandang / Kepala');
+                          setCheatWarning(true);
+                          if (user && user.nis) google.script.run.laporKecurangan(user.nis, user.nama);
+                      } else {
+                          setFaceStatus('1 Wajah Terdeteksi (Normal)');
+                      }
+                  } catch (err) {}
+              }, 5000);
+              return () => { clearInterval(captureInterval); clearInterval(livenessTimer); stopWebcam(); };
+          }
+      }, [view, appSettings.ai_face_liveness, user]);
+
+      const startWebcam = async () => {
+          try {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 120 }, audio: false });
+              streamRef.current = stream;
+              if (videoRef.current) {
+                  videoRef.current.srcObject = stream;
+                  videoRef.current.play();
+              }
+              setTimeout(() => { capturePhotoAndSend(); }, 5000);
+          } catch (e) { console.log("Kamera tidak ada/diblokir."); }
+      };
+
+      const stopWebcam = () => {
+          if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
+      };
+
+      const capturePhotoAndSend = () => {
+          if (!videoRef.current || !user) return;
+          try {
+              const canvas = document.createElement('canvas');
+              canvas.width = 160; canvas.height = 120;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(videoRef.current, 0, 0, 160, 120);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.5); // Kompresi JPEG
+              if (typeof google !== 'undefined' && google.script) {
+                  google.script.run.uploadWebcamLog(user.nis, user.nama, dataUrl, appSettings.token);
+              }
+          } catch(err) {}
+      };
+
+      // PEMBUATAN SIDIK JARI PERANGKAT UNIK
+      const getDeviceFingerprint = () => {
+         const screenData = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+         const language = navigator.language || 'id';
+         const userAgent = navigator.userAgent;
+         const raw = `${screenData}-${language}-${userAgent.substring(0, 40)}`;
+         try {
+            return btoa(raw).replace(/=/g, '');
+         } catch (e) {
+            // Fallback aman bila string mengandung karakter non-Latin1
+            return btoa(unescape(encodeURIComponent(raw))).replace(/=/g, '');
+         }
+      };
+
+      const getDeviceDesc = () => navigator.userAgent.substring(0, 60);
+
+      useEffect(() => {
+          if (typeof google !== 'undefined' && google.script) {
+              google.script.run.withSuccessHandler((res) => {
+                  if(res.success && res.data) {
+                      setAppSettings(prev => ({...prev, ...res.data}));
+                      if (user) {
+                          let restoredTime = null;
+                          const localStateStr = localStorage.getItem(`cbt_state_${user.nis}`);
+                          if (localStateStr) {
+                              try {
+                                  const localState = JSON.parse(localStateStr);
+                                  if(localState.jawaban) setJawaban(localState.jawaban);
+                                  if(localState.timeLeft) { setTimeLeft(localState.timeLeft); restoredTime = localState.timeLeft; }
+                              } catch(e){}
+                          }
+                          if (!restoredTime && res.data.durasi) setTimeLeft(parseInt(res.data.durasi) * 60);
+                          const savedGFormStr = localStorage.getItem(`cbt_gform_meta_${user.nis}`);
+                          if (savedGFormStr) {
+                              try { setGformMeta(JSON.parse(savedGFormStr)); } catch(e) {}
+                          }
+                          let parsedSavedSoal = [];
+                          try {
+                              const savedSoalStr = localStorage.getItem(`cbt_soal_${user.nis}`);
+                              if (savedSoalStr) parsedSavedSoal = JSON.parse(savedSoalStr) || [];
+                          } catch(e) {}
+                          const sanitizedSavedSoal = Array.isArray(parsedSavedSoal)
+                              ? parsedSavedSoal.map(it => ({ ...it, no: it && it.itemId ? '' : (it?.no || '') }))
+                              : [];
+                          if (sanitizedSavedSoal.length > 0 && !user.gformLink) {
+                              setSoalList(sanitizedSavedSoal);
+                              setActiveSection(sanitizedSavedSoal[0]?.sectionIndex || 0);
+                              setResumeMessage('Sesi berhasil dipulihkan. Anda tidak perlu login ulang.');
+                          } else {
+                              if (sanitizedSavedSoal.length > 0) {
+                                  setSoalList(sanitizedSavedSoal);
+                                  setActiveSection(sanitizedSavedSoal[0]?.sectionIndex || 0);
+                              }
+                              const resumeGformTarget = user.gformLink ? ((user.gformLink.formId && !/^1FAIpQL/.test(user.gformLink.formId)) ? user.gformLink.formId : (user.gformLink.formUrl || user.gformLink.formId)) : '';
+                              fetchSoalFallback(user.kelas, user.mapel || res.data.nama_ujian, user.nis, resumeGformTarget, user);
+                          }
+                      } else {
+                          if(res.data.durasi) setTimeLeft(parseInt(res.data.durasi) * 60);
+                      }
+                  }
+              }).getAppSettings();
+          }
+      }, []); 
+
+      const fetchSoal = (kelasSiswa, mapelOrNis, maybeNis, gformOverrideUrl = '', studentObj = null) => {
+          setIsLoading(true);
+          setErrorMessage('');
+          let targetMapel = appSettings.nama_ujian || 'Umum';
+          let targetNis = '';
+
+          if (maybeNis) {
+              targetMapel = mapelOrNis || targetMapel;
+              targetNis = maybeNis;
+          } else {
+              targetNis = mapelOrNis || (user ? user.nis : '');
+          }
+
+          const activeMapel = targetMapel || 'Umum';
+          const activeNis = targetNis || (user ? user.nis : 'siswa');
+          const activeStudent = studentObj || user;
+
+          google.script.run.withSuccessHandler(async (rawRes) => {
+              const res = rawRes || {};
+              if (res.success && res.source === 'GOOGLE_FORM' && res.items && res.items.length > 0) {
+                  let loadedItems = res.items.map(it => ({ ...it, no: '' }));
+                  if (res.gformMeta) {
+                      setGformMeta(res.gformMeta);
+                      try { localStorage.setItem(`cbt_gform_meta_${activeNis}`, JSON.stringify(res.gformMeta)); } catch(e) {}
+                  }
+                  if (res.mapel) {
+                      setAppSettings(prev => ({ ...prev, nama_ujian: res.mapel }));
+                  }
+                  const firstAnswerable = loadedItems.find(it => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(it.tipe));
+                  setActiveSection((firstAnswerable && firstAnswerable.sectionIndex) || loadedItems[0]?.sectionIndex || 0);
+
+                  // Auto-prefill kolom identitas (Nama / NIS / Kelas) jika ada di Google Form
+                  if (activeStudent) {
+                      setJawaban(prev => {
+                          const next = { ...prev };
+                          const normCls = String(activeStudent.kelas || '').toLowerCase().replace(/[-_.\/\s]+/g, '');
+                          loadedItems.forEach(it => {
+                              if (next[it.id]) return;
+                              const t = stripGFormLeadingNumber(it.text || '').toLowerCase();
+                              if (it.tipe === 'ISIAN') {
+                                  if (t.includes('nama') && !t.includes('sekolah') && !t.includes('ayah') && !t.includes('ibu')) next[it.id] = activeStudent.nama || '';
+                                  else if (t.includes('nis') || t.includes('nomor peserta') || t.includes('no peserta') || t.includes('no. peserta')) next[it.id] = activeStudent.nis || '';
+                                  else if (t.includes('kelas') || t.includes('rombel')) next[it.id] = activeStudent.kelas || '';
+                              } else if ((it.tipe === 'DROPDOWN' || it.tipe === 'PG') && Array.isArray(it.opsi) && (t.includes('kelas') || t.includes('rombel')) && normCls) {
+                                  const matchedKelas = it.opsi.find(o => String(o || '').toLowerCase().replace(/[-_.\/\s]+/g, '') === normCls);
+                                  if (matchedKelas) next[it.id] = matchedKelas;
+                              }
+                          });
+                          return next;
+                      });
+                  }
+                  setSoalList(loadedItems);
+                  try { localStorage.setItem(`cbt_soal_${activeNis}`, JSON.stringify(loadedItems)); } catch(e) {}
+                  try { await cbtIDB.setSoal(activeNis, loadedItems); } catch(e) {}
+                  const qCount = loadedItems.filter(it => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(it.tipe)).length;
+                  setResumeMessage(`Soal Google Form berhasil dimuat (${qCount} butir).`);
+              } else if (res.success && res.data && res.data.length > 0) {
+                  setGformMeta(null);
+                  try { localStorage.removeItem(`cbt_gform_meta_${activeNis}`); } catch(e) {}
+                  let formattedSoal = res.data.map((s, idx) => ({
+                      id: idx, no: s[0], text: s[1], opsi: [s[2], s[3], s[4], s[5], s[6]].filter(Boolean), kunci: s[7],
+                      tipe: (s[8] || 'PG').toString().toUpperCase().trim(),
+                      kesulitan: (s[9] || 'SEDANG').toString().toUpperCase().trim(),
+                      dataAkm: s[10] || '',
+                      sectionIndex: 0
+                  }));
+                  if (res.mapel) {
+                      setAppSettings(prev => ({ ...prev, nama_ujian: res.mapel }));
+                  }
+                  if (appSettings.acak_soal === 'Ya') {
+                      formattedSoal = shuffleArray(formattedSoal);
+                  }
+                  setActiveSection(0);
+                  setSoalList(formattedSoal);
+                  try { localStorage.setItem(`cbt_soal_${activeNis}`, JSON.stringify(formattedSoal)); } catch(e) {}
+                  try { await cbtIDB.setSoal(activeNis, formattedSoal); } catch(e) {}
+                  setResumeMessage(`Soal berhasil dimuat (${formattedSoal.length} butir).`);
+              } else {
+                  let offlineSoal = null;
+                  try { offlineSoal = await cbtIDB.getSoal(activeNis); } catch(e) {}
+                  if (offlineSoal && offlineSoal.length > 0) {
+                      const cleanOffline = offlineSoal.map(it => ({ ...it, no: it && it.itemId ? '' : (it?.no || '') }));
+                      setSoalList(cleanOffline);
+                      setActiveSection(cleanOffline[0]?.sectionIndex || 0);
+                      setResumeMessage('Soal dipulihkan dari IndexedDB (Mode Offline-First).');
+                  } else {
+                      setSoalList([]);
+                      setErrorMessage(res.message || "Gagal memuat soal dari server. Periksa apakah Bank Soal atau Link Google Form sudah diisi dan dapat diakses publik.");
+                  }
+              }
+              setIsLoading(false);
+          }).withFailureHandler(async (err) => {
+              let offlineSoal = null;
+              try { offlineSoal = await cbtIDB.getSoal(activeNis); } catch(e) {}
+              if (offlineSoal && offlineSoal.length > 0) {
+                  const cleanOffline = offlineSoal.map(it => ({ ...it, no: it && it.itemId ? '' : (it?.no || '') }));
+                  setSoalList(cleanOffline);
+                  setActiveSection(cleanOffline[0]?.sectionIndex || 0);
+                  setResumeMessage('Soal dipulihkan dari IndexedDB (Mode Offline-First).');
+              } else {
+                  setErrorMessage("Gagal memuat soal dari server: " + ((err && err.message) || "Koneksi terputus / Google Form terlalu besar."));
+              }
+              setIsLoading(false);
+          }).getSoalUjian(kelasSiswa, activeMapel, gformOverrideUrl || '');
+      };
+      const fetchSoalFallback = fetchSoal;
+
+      // ENGINE SIRINE ALARM LOCKDOWN MODE (Berbunyi keras jika mencoba split-screen / floating app / keluar)
+      const unlockLockdownAudio = () => {
+          try {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (!AudioCtx) return;
+              if (!alarmCtxRef.current) alarmCtxRef.current = new AudioCtx();
+              if (alarmCtxRef.current.state === 'suspended') {
+                  alarmCtxRef.current.resume().catch(() => {});
+              }
+          } catch (e) {}
+      };
+
+      const stopLockdownAlarm = () => {
+          try {
+              if (alarmTimerRef.current) {
+                  clearInterval(alarmTimerRef.current);
+                  alarmTimerRef.current = null;
+              }
+              setIsAlarmPlaying(false);
+              if (window.AndroidExambro && typeof window.AndroidExambro.stopSiren === 'function') {
+                  window.AndroidExambro.stopSiren();
+              }
+          } catch (e) {}
+      };
+
+      const startLockdownAlarm = (reasonMsg = '') => {
+          try {
+              setIsAlarmPlaying(true);
+              if (window.AndroidExambro && typeof window.AndroidExambro.triggerSiren === 'function') {
+                  window.AndroidExambro.triggerSiren(reasonMsg || 'Percobaan Split Screen / Keluar Lockdown');
+              }
+              if (navigator.vibrate) {
+                  try { navigator.vibrate([300, 150, 300, 150, 400]); } catch (ev) {}
+              }
+              if (alarmTimerRef.current) return;
+              const playBeepCycle = () => {
+                  try {
+                      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                      if (!AudioCtx) return;
+                      if (!alarmCtxRef.current) alarmCtxRef.current = new AudioCtx();
+                      const ctx = alarmCtxRef.current;
+                      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                      const now = ctx.currentTime;
+                      const osc = ctx.createOscillator();
+                      const gain = ctx.createGain();
+                      osc.type = 'sawtooth';
+                      osc.frequency.setValueAtTime(920, now);
+                      osc.frequency.setValueAtTime(1380, now + 0.18);
+                      osc.frequency.setValueAtTime(920, now + 0.36);
+                      gain.gain.setValueAtTime(0.45, now);
+                      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.52);
+                      osc.connect(gain);
+                      gain.connect(ctx.destination);
+                      osc.start(now);
+                      osc.stop(now + 0.54);
+                  } catch (eOsc) {}
+              };
+              playBeepCycle();
+              alarmTimerRef.current = setInterval(playBeepCycle, 650);
+          } catch (e) {}
+      };
+
+      const triggerLockdownViolation = (reasonText, soundAlarm = true) => {
+          if (isExamFinishedRef.current || view !== 'ujian') return;
+          setLockdownViolationMsg(reasonText);
+          setCheatWarning(true);
+          if (soundAlarm) startLockdownAlarm(reasonText);
+          const nowTs = Date.now();
+          if (user && user.nis && typeof google !== 'undefined' && google.script && (nowTs - lastCheatReportRef.current > 4000)) {
+              lastCheatReportRef.current = nowTs;
+              google.script.run.laporKecurangan(user.nis, user.nama, reasonText);
+          }
+      };
+
+      // LOCKDOWN MODE ANDROID & DETEKSI KELUAR APLIKASI / SPLIT SCREEN / FLOATING APP
+      useEffect(() => {
+          if (view === 'ujian') {
+              isExamFinishedRef.current = false;
+              baselineScreenRef.current = {
+                  w: Math.max(window.innerWidth || 0, baselineScreenRef.current.w || 0),
+                  h: Math.max(window.innerHeight || 0, baselineScreenRef.current.h || 0)
+              };
+              try {
+                  if (window.AndroidExambro && typeof window.AndroidExambro.startLockdown === 'function') {
+                      window.AndroidExambro.startLockdown();
+                  }
+              } catch (e) {}
+          } else {
+              if (view === 'selesai') {
+                  isExamFinishedRef.current = true;
+              }
+              stopLockdownAlarm();
+              setCheatWarning(false);
+              setFullscreenWarning(false);
+              setLockdownViolationMsg('');
+              try {
+                  if (window.AndroidExambro && typeof window.AndroidExambro.stopLockdown === 'function') {
+                      window.AndroidExambro.stopLockdown();
+                  }
+              } catch (e) {}
+          }
+      }, [view]);
+
+      useEffect(() => {
+          window.onAndroidLockdownViolation = (rawReason) => {
+              if (view !== 'ujian' || isExamFinishedRef.current) return;
+              const reason = rawReason && String(rawReason).trim()
+                ? String(rawReason).trim()
+                : 'Lockdown Android: Percobaan keluar aplikasi atau Split Screen terdeteksi!';
+              triggerLockdownViolation(reason, true);
+          };
+
+          const checkSplitScreenOrFloating = () => {
+              if (view !== 'ujian' || isExamFinishedRef.current) return;
+              const activeTag = document.activeElement ? document.activeElement.tagName : '';
+              const isTypingField = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(activeTag);
+              const scrW = (window.screen && window.screen.width) || 0;
+              const scrH = (window.screen && window.screen.height) || 0;
+              const outW = window.outerWidth || window.innerWidth || 0;
+              const outH = window.outerHeight || window.innerHeight || 0;
+              const baseW = baselineScreenRef.current.w || scrW;
+              const baseH = baselineScreenRef.current.h || scrH;
+
+              let nativeMultiWin = false;
+              try {
+                  if (window.AndroidExambro && typeof window.AndroidExambro.isInMultiWindow === 'function') {
+                      nativeMultiWin = Boolean(window.AndroidExambro.isInMultiWindow());
+                  }
+              } catch (e) {}
+
+              const isHorizontalSplitOrFloating = (scrW > 0 && outW > 0 && outW < scrW * 0.84) || (baseW > 0 && window.innerWidth < baseW * 0.82);
+              const isVerticalSplit = (!isTypingField && scrH > 0 && outH > 0 && outH < scrH * 0.70) || (!isTypingField && baseH > 0 && window.innerHeight < baseH * 0.62);
+
+              if (nativeMultiWin || (isAndroidDevice && (isHorizontalSplitOrFloating || isVerticalSplit))) {
+                  triggerLockdownViolation('LOCKDOWN ANDROID: Percobaan Split Screen / Floating Aplikasi Terdeteksi!', true);
+              }
+          };
+
+          const handleContextMenu = (e) => e.preventDefault();
+          const handleVisibilityChange = () => {
+              if (document.hidden && view === 'ujian' && !isExamFinishedRef.current && appSettings.ujian_ketat === 'Ya') {
+                  triggerLockdownViolation('LOCKDOWN MODE: Terdeteksi mencoba keluar dari aplikasi / pindah layar!', true);
+              }
+          };
+          const handleFullscreenChange = () => {
+              if (view === 'ujian' && !isExamFinishedRef.current && (appSettings.kiosk_mode === 'Ya' || appSettings.ujian_ketat === 'Ya') && !document.fullscreenElement) {
+                  setFullscreenWarning(true);
+                  triggerLockdownViolation('LOCKDOWN MODE: Siswa keluar dari Mode Layar Penuh!', isAndroidDevice);
+              }
+          };
+          const handleKeyDown = (e) => {
+              if (view !== 'ujian' || isExamFinishedRef.current) return;
+              if (e.key === 'F12' || e.key === 'PrintScreen' ||
+                  ((e.ctrlKey || e.metaKey) && ['c','x','u','p','s'].includes(e.key.toLowerCase())) ||
+                  ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i','j','c','s'].includes(e.key.toLowerCase()))) {
+                  e.preventDefault();
+                  if (e.key === 'PrintScreen' && appSettings.ujian_ketat === 'Ya') {
+                      triggerLockdownViolation('LOCKDOWN MODE: Percobaan Screenshot / Tangkap Layar Terdeteksi!', true);
+                  }
+              }
+          };
+          document.addEventListener('contextmenu', handleContextMenu);
+          document.addEventListener('visibilitychange', handleVisibilityChange);
+          document.addEventListener('fullscreenchange', handleFullscreenChange);
+          document.addEventListener('keydown', handleKeyDown);
+          window.addEventListener('resize', checkSplitScreenOrFloating);
+          return () => {
+              delete window.onAndroidLockdownViolation;
+              document.removeEventListener('contextmenu', handleContextMenu);
+              document.removeEventListener('visibilitychange', handleVisibilityChange);
+              document.removeEventListener('fullscreenchange', handleFullscreenChange);
+              document.removeEventListener('keydown', handleKeyDown);
+              window.removeEventListener('resize', checkSplitScreenOrFloating);
+          };
+      }, [view, appSettings.ujian_ketat, appSettings.kiosk_mode, user, isAndroidDevice]);
+
+      // ANTI-CURANG AUDIO MONITORING (Jika diaktifkan Admin)
+      useEffect(() => {
+          if (view !== 'ujian' || appSettings.audio_monitoring !== 'Ya') return;
+          let audioCtx = null;
+          let micStream = null;
+          let audioTimer = null;
+          let loudStreak = 0;
+          let lastReportTime = 0;
+
+          const initAudio = async () => {
+              try {
+                  micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                  const AudioContextCls = window.AudioContext || window.webkitAudioContext;
+                  if (!AudioContextCls) return;
+                  audioCtx = new AudioContextCls();
+                  const source = audioCtx.createMediaStreamSource(micStream);
+                  const analyser = audioCtx.createAnalyser();
+                  analyser.fftSize = 256;
+                  source.connect(analyser);
+                  const dataArr = new Uint8Array(analyser.frequencyBinCount);
+
+                  audioTimer = setInterval(() => {
+                      analyser.getByteFrequencyData(dataArr);
+                      let sum = 0;
+                      for (let i = 0; i < dataArr.length; i++) sum += dataArr[i];
+                      const avg = sum / dataArr.length;
+                      if (avg > 45) {
+                          loudStreak++;
+                          setAudioStatus('Suara Bising Terdeteksi!');
+                          if (loudStreak >= 3 && Date.now() - lastReportTime > 20000) {
+                              lastReportTime = Date.now();
+                              if (user && user.nis && typeof google !== 'undefined' && google.script) {
+                                  google.script.run.laporSuaraMencurigakan(user.nis, user.nama);
+                              }
+                          }
+                      } else {
+                          loudStreak = 0;
+                          setAudioStatus('Audio Tenang (Normal)');
+                      }
+                  }, 2000);
+              } catch (e) { setAudioStatus('Mikrofon Nonaktif'); }
+          };
+          initAudio();
+          return () => {
+              if (audioTimer) clearInterval(audioTimer);
+              if (micStream) micStream.getTracks().forEach(t => t.stop());
+              if (audioCtx && audioCtx.close) audioCtx.close().catch(() => {});
+          };
+      }, [view, appSettings.audio_monitoring, user]);
+
+      useEffect(() => {
+          if (view === 'ujian' && user) {
+              localStorage.setItem(`cbt_state_${user.nis}`, JSON.stringify({ jawaban: jawaban, timeLeft: timeLeft }));
+          }
+      }, [jawaban, timeLeft, user, view]);
+
+      // Auto-sync cepat ketika siswa mengisi Nama Ruang di intro atau di dalam soal Google Form
+      const detectedGFormRuang = extractGFormRuang(soalList, jawaban) || selectedRuang;
+      useEffect(() => {
+          if (view !== 'ujian' || !user || !detectedGFormRuang) return;
+          if (detectedGFormRuang !== selectedRuangRef.current) {
+              setSelectedRuang(detectedGFormRuang);
+              selectedRuangRef.current = detectedGFormRuang;
+              try { localStorage.setItem(`cbt_ruang_${user.nis}`, detectedGFormRuang); } catch(e) {}
+          }
+          if (detectedGFormRuang === lastSyncedRuangRef.current) return;
+          const t = setTimeout(() => {
+              if (typeof google !== 'undefined' && google.script) {
+                  lastSyncedRuangRef.current = detectedGFormRuang;
+                  const totalAns = (soalListRef.current || []).filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)).length;
+                  google.script.run.saveRuangSiswa(user.nis, detectedGFormRuang);
+                  google.script.run.saveJawabanSementara(user.nis, JSON.stringify(jawabanRef.current), timeLeftRef.current, detectedGFormRuang, totalAns);
+              }
+          }, 350);
+          return () => clearTimeout(t);
+      }, [detectedGFormRuang, view, user]);
+
+      useEffect(() => {
+          if (view === 'ujian' && user) {
+              const baseInterval = 30000; 
+              const randomJitter = Math.floor(Math.random() * 10000); 
+              const saveInterval = setInterval(() => {
+                  if (typeof google !== 'undefined' && google.script) {
+                      const curRuang = extractGFormRuang(soalListRef.current, jawabanRef.current) || selectedRuangRef.current;
+                      const totalAns = (soalListRef.current || []).filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)).length;
+                      if (curRuang) lastSyncedRuangRef.current = curRuang;
+                      google.script.run.withSuccessHandler((res) => {
+                          if (res && res.forceStop) {
+                              clearInterval(saveInterval);
+                              localStorage.removeItem(`cbt_state_${user.nis}`);
+                              localStorage.removeItem(`cbt_soal_${user.nis}`);
+                              localStorage.removeItem(`cbt_ruang_${user.nis}`);
+                              localStorage.removeItem('cbt_siswa_user');
+                              alert("PERHATIAN: Ujian Anda telah dihentikan paksa oleh Proktor Pengawas.");
+                              setView('selesai');
+                          }
+                      }).saveJawabanSementara(user.nis, JSON.stringify(jawabanRef.current), timeLeftRef.current, curRuang, totalAns);
+                  }
+              }, baseInterval + randomJitter); 
+              return () => clearInterval(saveInterval);
+          }
+      }, [view, user]);
+
+      const shuffleArray = (array) => {
+        let shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      const formatMediaUrl = (url) => {
+          if (!url) return '';
+          let clean = String(url).trim();
+          const gdriveMatch = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (gdriveMatch && (clean.includes('drive.google.com') || clean.includes('docs.google.com'))) {
+              return `https://drive.google.com/uc?export=view&id=${gdriveMatch[1]}`;
+          }
+          if (clean.includes('dropbox.com') && clean.includes('dl=0')) {
+              return clean.replace('dl=0', 'raw=1');
+          }
+          return clean;
+      };
+
+      const stripGFormLeadingNumber = (text) => {
+          if (text === undefined || text === null) return '';
+          let s = String(text).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').trim();
+          let prev = '';
+          while (s !== prev) {
+              prev = s;
+              s = s
+                  .replace(/^\s*(?:(?:No\.?|Nomor|Nomer|Soal|Pertanyaan)\s*(?:No\.?|Nomor|#)?\s*\d{1,3}\s*[.:)\-–—]?\s+)/i, '')
+                  .replace(/^\s*[\(\[]\s*\d{1,3}\s*[\)\]]\s*[.:)\-–—]?\s*/, '')
+                  .replace(/^\s*\d{1,3}(?:\.\d{1,2})?\s*[.):\-–—]\s+(?=\S)/, '')
+                  .replace(/^\s*\d{1,3}[.)](?=[^\d\s.,])/, '')
+                  .replace(/^\s*\d{1,3}\s+(?=(?:Nama|Kelas|NIS|NISN|No\.?|Nomor|Nomer|Absen|Ruang|Sesi|Token|Mapel|Mata\s+Pelajaran|Tanggal|Hari|Sekolah|Asal|Identitas|Biodata|Pilih|Isilah|Bacalah|Perhatikan|Tentukan|Berapakah|Mengapa|Apa|Siapa|Dimana|Kapan|Bagaimana|Jelaskan)\b)/i, '')
+                  .trim();
+          }
+          return s || String(text).trim();
+      };
+
+      const renderContent = (text) => {
+          if (!text) return null;
+          const parts = String(text).split(/(\[(?:img|gambar|image|audio|suara|mp3|video|mp4)\s*:\s*.*?\])/gi);
+          return parts.map((part, index) => {
+              const cleanPart = part.trim();
+              if (/^\[(?:img|gambar|image)\s*:/i.test(cleanPart)) {
+                  const rawUrl = cleanPart.replace(/^\[(?:img|gambar|image)\s*:/i, '').replace(/\]$/, '').trim();
+                  const url = formatMediaUrl(rawUrl);
+                  return (
+                    <div key={index} className="my-3 flex justify-center">
+                      <img src={url} alt="Media Soal" className="max-w-full h-auto max-h-72 rounded-xl border border-slate-200 shadow-md object-contain" onError={(e)=>{e.target.style.display='none';}} />
+                    </div>
+                  );
+              } else if (/^\[(?:audio|suara|mp3)\s*:/i.test(cleanPart)) {
+                  const rawUrl = cleanPart.replace(/^\[(?:audio|suara|mp3)\s*:/i, '').replace(/\]$/, '').trim();
+                  const url = formatMediaUrl(rawUrl);
+                  const lim = appSettings.audio_limit && appSettings.audio_limit !== 'Tanpa Batas' ? parseInt(appSettings.audio_limit) : 0;
+                  return <LimitedAudioPlayer key={index} url={url} limit={lim} />;
+              } else if (/^\[(?:video|mp4)\s*:/i.test(cleanPart)) {
+                  const rawUrl = cleanPart.replace(/^\[(?:video|mp4)\s*:/i, '').replace(/\]$/, '').trim();
+                  const url = formatMediaUrl(rawUrl);
+                  return (
+                    <div key={index} className="my-3 flex justify-center">
+                      <video controls className="w-full max-w-lg rounded-xl border border-slate-200 shadow-md">
+                        <source src={url} />
+                        Browser Anda tidak mendukung pemutaran video.
+                      </video>
+                    </div>
+                  );
+              } else {
+                  return <span key={index} dangerouslySetInnerHTML={{__html: part.replace(/\n/g, '<br/>')}} />;
+              }
+          });
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+
+        setIsLoading(true); setErrorMessage(''); setResumeMessage('');
+        const fingerprint = getDeviceFingerprint();
+        const browserDesc = getDeviceDesc();
+
+        if (typeof google !== 'undefined' && google.script) {
+          google.script.run
+            .withSuccessHandler((res) => {
+              if (res.success) { 
+                  setUser(res.data);
+                  const savedRuangLocal = localStorage.getItem(`cbt_ruang_${res.data.nis}`) || res.data.selectedRuang || '';
+                  setSelectedRuang(savedRuangLocal);
+                  selectedRuangRef.current = savedRuangLocal;
+                  setView('intro');
+                  localStorage.setItem('cbt_siswa_user', JSON.stringify(res.data));
+                  
+                  let restoredTime = null; let restoredAnswers = null;
+                  if (res.data.tempState) {
+                      if (res.data.tempState.timeLeft) restoredTime = res.data.tempState.timeLeft;
+                      if (res.data.tempState.answers) { try { restoredAnswers = JSON.parse(res.data.tempState.answers); } catch(e){} }
+                  }
+
+                  const localDataStr = localStorage.getItem(`cbt_state_${res.data.nis}`);
+                  if (localDataStr) {
+                      try {
+                          const localParsed = JSON.parse(localDataStr);
+                          if (!restoredTime || localParsed.timeLeft < restoredTime) {
+                              restoredTime = localParsed.timeLeft; restoredAnswers = localParsed.jawaban;
+                          }
+                      } catch(e) {}
+                  }
+
+                  if (restoredAnswers) setJawaban(restoredAnswers);
+                  if (restoredTime) {
+                      setTimeLeft(restoredTime);
+                      setResumeMessage('Sistem berhasil memulihkan jawaban dan sisa waktu pengerjaan Anda sebelumnya.');
+                  }
+                  const gformOverride = res.data.gformLink ? ((res.data.gformLink.formId && !/^1FAIpQL/.test(res.data.gformLink.formId)) ? res.data.gformLink.formId : (res.data.gformLink.formUrl || res.data.gformLink.formId)) : '';
+                  fetchSoal(res.data.kelas, res.data.mapel || appSettings.nama_ujian, res.data.nis, gformOverride, res.data); 
+              } 
+              else { setErrorMessage(res.message); setIsLoading(false); }
+            }).withFailureHandler((err) => {
+              setErrorMessage("Koneksi server gagal. Muat ulang halaman."); setIsLoading(false);
+            })
+            .loginSiswa(loginForm.nis, loginForm.password, '', fingerprint, browserDesc);
+        } else {
+          setIsLoading(false); setErrorMessage('Error: Google Script API tidak ditemukan.');
+        }
+      };
+
+      const handleSiswaLogout = () => {
+          localStorage.removeItem('cbt_siswa_user');
+          localStorage.removeItem(`cbt_state_${user?.nis}`);
+          localStorage.removeItem(`cbt_soal_${user?.nis}`);
+          localStorage.removeItem(`cbt_gform_meta_${user?.nis}`);
+          localStorage.removeItem(`cbt_ruang_${user?.nis}`);
+          window.location.reload();
+      };
+
+      const startUjian = () => {
+        unlockLockdownAudio();
+        if (!selectedRuang) return alert("Harap pilih Ruang Ujian Anda terlebih dahulu (Ruang 1 - Ruang 14) sebelum masuk ke soal!");
+        if (!isAgreed) return alert("Anda harus menyetujui pakta integritas!");
+        if (isLoading) return alert("Sedang memuat soal dari server, mohon tunggu beberapa detik.");
+        if (!soalList || soalList.length === 0) {
+            if (user) {
+                fetchSoal(user.kelas, user.mapel || appSettings.nama_ujian, user.nis, user.gformLink ? (user.gformLink.formUrl || user.gformLink.formId) : '', user);
+            }
+            return alert(errorMessage || "Soal belum berhasil dimuat. Sistem sedang mencoba memuat ulang soal.");
+        }
+        if (appSettings.exambro_only === 'Ya') {
+            const ua = navigator.userAgent || '';
+            if (!/Exambro|SEB|SafeExamBrowser/i.test(ua)) {
+                return alert("PERHATIAN: Ujian ini dikhususkan menggunakan aplikasi resmi CBT Exambro Lockdown Android / Safe Exam Browser. Akses dari browser biasa diblokir.");
+            }
+        }
+        try {
+            if (window.AndroidExambro && typeof window.AndroidExambro.isInMultiWindow === 'function' && window.AndroidExambro.isInMultiWindow()) {
+                startLockdownAlarm('Tutup Split Screen terlebih dahulu');
+                return alert("PERINGATAN LOCKDOWN MODE: Nonaktifkan mode Split Screen / Floating Window terlebih dahulu sebelum memulai ujian!");
+            }
+        } catch (eMw) {}
+        if (appSettings.ujian_ketat === 'Ya' || appSettings.kiosk_mode === 'Ya') {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen().catch(e=>console.log(e));
+        }
+        try {
+            if (window.AndroidExambro && typeof window.AndroidExambro.startLockdown === 'function') {
+                window.AndroidExambro.startLockdown();
+            }
+        } catch (eLd) {}
+
+        // Prefill pertanyaan Ruang di Google Form (jika masih kosong) sesuai pilihan Ruang siswa
+        let nextAnsSnapshot = { ...(jawabanRef.current || {}) };
+        let prefillChanged = false;
+        const roomNumMatch = selectedRuang.match(/(\d+)/);
+        const roomNumStr = roomNumMatch ? roomNumMatch[1] : '';
+        soalList.forEach(q => {
+            if (!q || ['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)) return;
+            const lbl = `${q.text || ''} ${q.helpText || ''}`;
+            if (/ruang|room|r\.\s*ujian/i.test(lbl) && !nextAnsSnapshot[q.id]) {
+                if (q.tipe === 'ISIAN') {
+                    nextAnsSnapshot[q.id] = selectedRuang;
+                    prefillChanged = true;
+                } else if ((q.tipe === 'DROPDOWN' || q.tipe === 'PG') && Array.isArray(q.opsi)) {
+                    const matchedOpt = q.opsi.find(o => {
+                        const rawOpt = String(o || '').trim();
+                        const normOpt = rawOpt.toLowerCase().replace(/[-_.]+/g, ' ').replace(/\s+/g, ' ').replace(/\b0+(\d+)/g, '$1');
+                        return normOpt === selectedRuang.toLowerCase() || (roomNumStr && (normOpt === roomNumStr || normOpt === `r ${roomNumStr}` || normOpt === `ruang ${roomNumStr}`));
+                    });
+                    if (matchedOpt) {
+                        nextAnsSnapshot[q.id] = matchedOpt;
+                        prefillChanged = true;
+                    }
+                }
+            }
+        });
+        if (prefillChanged) {
+            setJawaban(nextAnsSnapshot);
+            jawabanRef.current = nextAnsSnapshot;
+        }
+
+        setView('ujian');
+        if (user && typeof google !== 'undefined' && google.script) {
+            const initRuang = extractGFormRuang(soalList, nextAnsSnapshot) || selectedRuangRef.current;
+            const totalAns = (soalList || []).filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)).length;
+            if (initRuang) {
+                lastSyncedRuangRef.current = initRuang;
+                google.script.run.saveRuangSiswa(user.nis, initRuang);
+            }
+            google.script.run.saveJawabanSementara(user.nis, JSON.stringify(nextAnsSnapshot), timeLeftRef.current, initRuang, totalAns);
+        }
+        const timer = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev === 600 && !warningTriggered) { setShowTimeWarning(true); setWarningTriggered(true); }
+            if (prev <= 1) { clearInterval(timer); handleSubmitUjian(true); return 0; }
+            return prev - 1;
+          });
+        }, 1000);
+      };
+
+      const handlePilihJawaban = (idSoal, jawabanDipilih) => {
+          setJawaban(prev => ({ ...prev, [idSoal]: jawabanDipilih }));
+          if (missingRequiredId === idSoal && jawabanDipilih && String(jawabanDipilih).trim() !== '' && String(jawabanDipilih) !== '{}') {
+              setMissingRequiredId(null);
+          }
+          if (appSettings.adaptif_cat === 'Ya') {
+              const currentSoal = soalList[idSoal];
+              if (currentSoal) {
+                  const correct = evaluateSoalCorrectness(currentSoal, jawabanDipilih);
+                  setCatLevel(correct ? 'SULIT' : 'MUDAH');
+              }
+          }
+      };
+
+      const executeSubmitWithRetry = (nis, nama, token, score, status, ansString, analisaString, hashSig, gformPayloadJson, ruangSiswa = '', attempt = 1) => {
+        const maxAttempts = 6; 
+        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 2000; 
+
+        if (attempt > 1) setSubmitStatusText(`Server penuh (Antrean ${attempt}/${maxAttempts}). Mengirim otomatis dalam ${Math.round(delay/1000)} detik...`);
+        else setSubmitStatusText(gformPayloadJson ? 'Mengirim jawaban ke Google Form & merekam ke Spreadsheet...' : 'Menghubungkan ke server untuk merekam jawaban secara aman...');
+
+        setTimeout(() => {
+          if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+              .withSuccessHandler((res) => {
+                if (res.success) {
+                  isExamFinishedRef.current = true;
+                  stopLockdownAlarm();
+                  setCheatWarning(false);
+                  setFullscreenWarning(false);
+                  setLockdownViolationMsg('');
+                  try { window.AndroidExambro?.stopLockdown?.(); } catch (eLd) {}
+                  if (user) {
+                      localStorage.removeItem(`cbt_state_${user.nis}`);
+                      localStorage.removeItem(`cbt_soal_${user.nis}`);
+                      localStorage.removeItem(`cbt_gform_meta_${user.nis}`);
+                      localStorage.removeItem('cbt_siswa_user'); 
+                  }
+                  setSubmitStatusText(''); setIsLoading(false); setView('selesai');
+                } else {
+                  if (attempt < maxAttempts) executeSubmitWithRetry(nis, nama, token, score, status, ansString, analisaString, hashSig, gformPayloadJson, ruangSiswa, attempt + 1);
+                  else {
+                      cbtIDB.addOfflineSubmit({ nis, nama, token, score, status, ansString, analisaString, hashSig, gformPayloadJson, ruangSiswa, timestamp: Date.now() });
+                      isExamFinishedRef.current = true;
+                      stopLockdownAlarm();
+                      setCheatWarning(false);
+                      setFullscreenWarning(false);
+                      setLockdownViolationMsg('');
+                      try { window.AndroidExambro?.stopLockdown?.(); } catch (eLd) {}
+                      if (user) {
+                          localStorage.removeItem(`cbt_state_${user.nis}`);
+                          localStorage.removeItem(`cbt_soal_${user.nis}`);
+                          localStorage.removeItem(`cbt_gform_meta_${user.nis}`);
+                          localStorage.removeItem('cbt_siswa_user');
+                      }
+                      setSubmitStatusText(''); setIsLoading(false);
+                      alert("Koneksi server sibuk/offline. Jawaban Anda telah BERHASIL DIAMANKAN secara lokal di IndexedDB (Offline-First Mode). Sistem menyinkronkan otomatis di latar belakang.");
+                      setView('selesai');
+                  }
+                }
+              })
+              .withFailureHandler((err) => {
+                if (attempt < maxAttempts) executeSubmitWithRetry(nis, nama, token, score, status, ansString, analisaString, hashSig, gformPayloadJson, ruangSiswa, attempt + 1);
+                else {
+                  isExamFinishedRef.current = false;
+                  setSubmitStatusText(''); setIsLoading(false); alert("Kesalahan Jaringan Parah. Harap panggil Proktor.");
+                }
+              })
+              .submitUjian(nis, nama, token, score, status, ansString, analisaString, hashSig || '', gformPayloadJson || '', ruangSiswa || '');
+          } else {
+            isExamFinishedRef.current = true;
+            stopLockdownAlarm();
+            setCheatWarning(false);
+            setFullscreenWarning(false);
+            try { window.AndroidExambro?.stopLockdown?.(); } catch (eLd) {}
+            setIsLoading(false); setView('selesai');
+          }
+        }, attempt === 1 ? 0 : delay); 
+      };
+
+      const buildGFormSubmitPayload = (activeSoal = null, activeAns = null, activeMeta = null, activeUser = null, activeSettings = null) => {
+        const gfMetaObj = activeMeta || gformMetaRef.current || gformMeta;
+        if (!gfMetaObj) return '';
+        const list = activeSoal || soalListRef.current || soalList || [];
+        const ansObj = activeAns || jawabanRef.current || jawaban || {};
+        const usr = activeUser || userRef.current || user;
+        const cfg = activeSettings || appSettingsRef.current || appSettings;
+        const responses = {};
+        const httpEntries = {};
+
+        list.forEach(q => {
+            if (!q || ['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)) return;
+            let rawAns = ansObj[q.id];
+            const tipe = (q.tipe || 'PG').toUpperCase();
+
+            // Pastikan kolom identitas (Nama / NIS / Kelas / Ruang) terisi otomatis jika masih kosong
+            if ((rawAns === undefined || rawAns === null || String(rawAns).trim() === '') && usr) {
+                const lbl = stripGFormLeadingNumber(q.text || '').toLowerCase();
+                if (tipe === 'ISIAN') {
+                    if (lbl.includes('nama') && !lbl.includes('sekolah') && !lbl.includes('ayah') && !lbl.includes('ibu')) rawAns = usr.nama || '';
+                    else if (lbl.includes('nis') || lbl.includes('nomor peserta') || lbl.includes('no peserta')) rawAns = usr.nis || '';
+                    else if (lbl.includes('kelas') || lbl.includes('rombel')) rawAns = usr.kelas || '';
+                    else if (/ruang|room|r\.\s*ujian/i.test(lbl)) rawAns = selectedRuangRef.current || usr.ruang || '';
+                } else if ((tipe === 'DROPDOWN' || tipe === 'PG') && Array.isArray(q.opsi)) {
+                    if (lbl.includes('kelas') || lbl.includes('rombel')) {
+                        const normCls = String(usr.kelas || '').toLowerCase().replace(/[-_.\/\s]+/g, '');
+                        const mCls = q.opsi.find(o => String(o || '').toLowerCase().replace(/[-_.\/\s]+/g, '') === normCls);
+                        if (mCls) rawAns = mCls;
+                    } else if (/ruang|room|r\.\s*ujian/i.test(lbl)) {
+                        const curRm = selectedRuangRef.current || usr.ruang || '';
+                        const rmNum = (curRm.match(/(\d+)/) || [])[1];
+                        const mRm = q.opsi.find(o => {
+                            const normOpt = String(o || '').toLowerCase().replace(/[-_.]+/g, ' ').replace(/\s+/g, ' ').replace(/\b0+(\d+)/g, '$1').trim();
+                            return normOpt === curRm.toLowerCase() || (rmNum && (normOpt === rmNum || normOpt === `r ${rmNum}` || normOpt === `ruang ${rmNum}`));
+                        });
+                        if (mRm) rawAns = mRm;
+                    }
+                }
+            }
+
+            if (tipe === 'PG_KOMPLEKS') {
+                const arr = Array.isArray(rawAns) ? rawAns : (rawAns ? String(rawAns).split('|||').filter(Boolean) : []);
+                if (q.itemId) responses[q.itemId] = arr;
+                if (q.entryId) httpEntries['entry.' + q.entryId] = arr;
+            } else if (tipe === 'GRID' || tipe === 'BENAR_SALAH') {
+                const rows = q.gridRows || q.opsi || [];
+                let parsedMap = {};
+                if (rawAns) {
+                    try { parsedMap = typeof rawAns === 'object' ? rawAns : JSON.parse(rawAns); } catch(e) {}
+                }
+                const rowArr = rows.map((_, rIdx) => parsedMap[rIdx] || '');
+                if (q.itemId) responses[q.itemId] = rowArr;
+                if (Array.isArray(q.entryIds)) {
+                    q.entryIds.forEach((eid, rIdx) => {
+                        if (eid && rowArr[rIdx]) httpEntries['entry.' + eid] = rowArr[rIdx];
+                    });
+                }
+            } else if (tipe === 'CHECKBOX_GRID') {
+                const rows = q.gridRows || q.opsi || [];
+                let parsedMap = {};
+                if (rawAns) {
+                    try { parsedMap = typeof rawAns === 'object' ? rawAns : JSON.parse(rawAns); } catch(e) {}
+                }
+                const rowArrs = rows.map((_, rIdx) => Array.isArray(parsedMap[rIdx]) ? parsedMap[rIdx] : []);
+                if (q.itemId) responses[q.itemId] = rowArrs;
+                if (Array.isArray(q.entryIds)) {
+                    q.entryIds.forEach((eid, rIdx) => {
+                        if (eid && rowArrs[rIdx] && rowArrs[rIdx].length > 0) httpEntries['entry.' + eid] = rowArrs[rIdx];
+                    });
+                }
+            } else if (tipe === 'DATE') {
+                const val = rawAns !== undefined && rawAns !== null ? String(rawAns).trim() : '';
+                if (q.itemId) responses[q.itemId] = val;
+                if (q.entryId && val) {
+                    const parts = val.split('-');
+                    if (parts.length === 3) {
+                        httpEntries['entry.' + q.entryId + '_year'] = parts[0];
+                        httpEntries['entry.' + q.entryId + '_month'] = String(parseInt(parts[1], 10));
+                        httpEntries['entry.' + q.entryId + '_day'] = String(parseInt(parts[2], 10));
+                    } else {
+                        httpEntries['entry.' + q.entryId] = val;
+                    }
+                }
+            } else if (tipe === 'TIME') {
+                const val = rawAns !== undefined && rawAns !== null ? String(rawAns).trim() : '';
+                if (q.itemId) responses[q.itemId] = val;
+                if (q.entryId && val) {
+                    const parts = val.split(':');
+                    if (parts.length >= 2) {
+                        httpEntries['entry.' + q.entryId + '_hour'] = parts[0].padStart(2, '0');
+                        httpEntries['entry.' + q.entryId + '_minute'] = parts[1].padStart(2, '0');
+                    } else {
+                        httpEntries['entry.' + q.entryId] = val;
+                    }
+                }
+            } else {
+                const val = rawAns !== undefined && rawAns !== null ? String(rawAns) : '';
+                if (q.itemId) responses[q.itemId] = val;
+                if (q.entryId && val) httpEntries['entry.' + q.entryId] = val;
+            }
+        });
+
+        const firstSec = Array.isArray(gfMetaObj.sections) ? gfMetaObj.sections[0] : null;
+        return JSON.stringify({
+            submitMode: gfMetaObj.submitMode || 'FORMAPP',
+            formId: gfMetaObj.formId || '',
+            formUrl: gfMetaObj.formUrl || '',
+            formResponseUrl: gfMetaObj.formResponseUrl || '',
+            fbzx: gfMetaObj.fbzx || (firstSec && firstSec.fbzx) || '',
+            mapel: (cfg && cfg.nama_ujian) || '',
+            sectionCount: (gfMetaObj.sections && gfMetaObj.sections.length) || 1,
+            responses: responses,
+            httpEntries: httpEntries
+        });
+      };
+
+      const handleSubmitUjian = async (isAuto = false, skipConfirm = false) => {
+        const curSoalList = soalListRef.current || soalList || [];
+        const curJawaban = jawabanRef.current || jawaban || {};
+        const curUser = userRef.current || user;
+        const curSettings = appSettingsRef.current || appSettings;
+        const curGformMeta = gformMetaRef.current || gformMeta;
+
+        if (!isAuto && !skipConfirm) {
+            const answerable = curSoalList.filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe));
+            const missingReq = answerable.filter(q => q.isRequired && (!curJawaban[q.id] || String(curJawaban[q.id]).trim() === '' || String(curJawaban[q.id]) === '{}'));
+            if (missingReq.length > 0) {
+                const targetQ = missingReq[0];
+                const firstMissingIdx = curSoalList.findIndex(q => q.id === targetQ.id);
+                setMissingRequiredId(targetQ.id);
+                if (targetQ.sectionIndex !== undefined && targetQ.sectionIndex !== activeSection) {
+                    setActiveSection(targetQ.sectionIndex);
+                }
+                setTimeout(() => {
+                    const el = document.getElementById(`soal-card-${firstMissingIdx}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+                return;
+            }
+            setMissingRequiredId(null);
+            setShowSubmitConfirmModal(true);
+            return;
+        }
+        isExamFinishedRef.current = true;
+        stopLockdownAlarm();
+        setCheatWarning(false);
+        setFullscreenWarning(false);
+        setLockdownViolationMsg('');
+        try { window.AndroidExambro?.stopLockdown?.(); } catch (eLd) {}
+        setIsLoading(true);
+        let benar = 0; let gradableCount = 0; let detailAnalisa = [];
+        const answerableList = curSoalList.filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe));
+        answerableList.forEach(soal => {
+            const ans = curJawaban[soal.id] || '';
+            const ansFormatted = typeof ans === 'object' ? JSON.stringify(ans) : String(ans);
+            const hasKey = Boolean(soal.kunci && String(soal.kunci).trim() !== '');
+            const isCorrect = hasKey ? evaluateSoalCorrectness(soal, ansFormatted) : false;
+            if (hasKey) {
+                gradableCount++;
+                if (isCorrect) benar++;
+            }
+            detailAnalisa.push({ no: soal.no || '', question: stripGFormLeadingNumber(soal.text), studentAns: ansFormatted || '-', correctAns: soal.kunci || '-', isCorrect });
+        });
+        const score = gradableCount > 0 ? Math.round((benar / gradableCount) * 100) : 0;
+        const ansString = JSON.stringify(curJawaban);
+        const analisaString = JSON.stringify(detailAnalisa);
+        const gformPayloadJson = buildGFormSubmitPayload(curSoalList, curJawaban, curGformMeta, curUser, curSettings);
+        const gformTokenVal = extractGFormFieldByKeyword(curSoalList, curJawaban, /token/i) || (curSettings && curSettings.token) || 'GFORM';
+        const gformRuangVal = extractGFormRuang(curSoalList, curJawaban) || selectedRuangRef.current || selectedRuang;
+        const hashSig = await generateSHA256(`${curUser.nis}|${gformTokenVal}|${ansString}|${analisaString}`);
+        executeSubmitWithRetry(curUser.nis, curUser.nama, gformTokenVal, score, 'Selesai', ansString, analisaString, hashSig, gformPayloadJson, gformRuangVal, 1);
+      };
+
+      const formatTime = (seconds) => {
+        const h = Math.floor(seconds / 3600); const m = Math.floor((seconds % 3600) / 60); const s = seconds % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+      };
+
+      // FUNGSI SCRATCHPAD
+
+      useEffect(() => {
+         if (showPad && canvasRef.current) {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx.strokeStyle = '#4f46e5'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+         }
+      }, [showPad]);
+
+      const startDrawing = (e) => {
+         const canvas = canvasRef.current; const ctx = canvas.getContext('2d'); const rect = canvas.getBoundingClientRect();
+         let cX = e.touches ? e.touches[0].clientX : e.clientX; let cY = e.touches ? e.touches[0].clientY : e.clientY;
+         ctx.beginPath(); ctx.moveTo(cX - rect.left, cY - rect.top); setIsDrawing(true);
+      };
+
+      const draw = (e) => {
+         if (!isDrawing) return;
+         if (e.touches && e.cancelable) e.preventDefault(); // Cegah scroll HP saat coret-coret
+         const canvas = canvasRef.current; const ctx = canvas.getContext('2d'); const rect = canvas.getBoundingClientRect();
+         let cX = e.touches ? e.touches[0].clientX : e.clientX; let cY = e.touches ? e.touches[0].clientY : e.clientY;
+         ctx.lineTo(cX - rect.left, cY - rect.top); ctx.stroke();
+      };
+      
+      const stopDrawing = () => setIsDrawing(false);
+      const clearCanvas = () => {
+         if (canvasRef.current) {
+             const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+         }
+      };
+
+            useEffect(() => {
+          let syncTimer;
+          if (view === 'selesai') {
+              const checkAndSync = async () => {
+                  const queue = await cbtIDB.getOfflineSubmits();
+                  setOfflineQueueCount(queue.length);
+                  if (queue.length > 0 && typeof google !== 'undefined' && google.script && !syncingOffline) {
+                      setSyncingOffline(true);
+                      for (let item of queue) {
+                          google.script.run
+                              .withSuccessHandler(async (res) => {
+                                  if (res && res.success) {
+                                      await cbtIDB.clearOfflineSubmits();
+                                      setOfflineQueueCount(0);
+                                      setSyncingOffline(false);
+                                  }
+                              })
+                              .withFailureHandler(() => setSyncingOffline(false))
+                              .submitUjian(item.nis, item.nama, item.token, item.score, item.status, item.ansString, item.analisaString, item.hashSig || '', item.gformPayloadJson || '', item.ruangSiswa || '');
+                      }
+                  }
+              };
+              checkAndSync();
+              syncTimer = setInterval(checkAndSync, 8000);
+          }
+          return () => clearInterval(syncTimer);
+      }, [view, syncingOffline]);
+
+      // ===== SIMULASI_LAB: Laboratorium Virtual STEM (100% lokal, tanpa API eksternal) =====
+      const STEM_MODELS = {
+        PENDULUM:   { name: 'Bandul Sederhana',   formula: 'T = 2π √(L / g)', resultLabel: 'Periode T (detik)', sliders: [{ key: 'L', label: 'Panjang tali L (m)', min: 0.2, max: 5, step: 0.1 }], initial: { L: 1.0 }, compute: (p) => 2 * Math.PI * Math.sqrt(p.L / 9.8) },
+        PROYEKTIL:  { name: 'Gerak Parabola',     formula: 'R = v² sin(2θ) / g', resultLabel: 'Jarak jangkauan R (m)', sliders: [{ key: 'v', label: 'Kecepatan awal v (m/s)', min: 5, max: 50, step: 0.5 }, { key: 'theta', label: 'Sudut θ (derajat)', min: 5, max: 85, step: 1 }], initial: { v: 20, theta: 45 }, compute: (p) => (p.v * p.v) * Math.sin(2 * p.theta * Math.PI / 180) / 9.8 },
+        OHM:        { name: 'Hukum Ohm',           formula: 'I = V / R', resultLabel: 'Arus I (Ampere)', sliders: [{ key: 'V', label: 'Tegangan V (volt)', min: 1, max: 120, step: 1 }, { key: 'R', label: 'Hambatan R (ohm)', min: 1, max: 100, step: 1 }], initial: { V: 12, R: 6 }, compute: (p) => p.V / p.R },
+        ENERGI:     { name: 'Energi Kinetik',      formula: 'Ek = ½ m v²', resultLabel: 'Energi kinetik Ek (Joule)', sliders: [{ key: 'm', label: 'Massa m (kg)', min: 0.5, max: 20, step: 0.5 }, { key: 'v', label: 'Kecepatan v (m/s)', min: 1, max: 30, step: 0.5 }], initial: { m: 2, v: 10 }, compute: (p) => 0.5 * p.m * p.v * p.v }
+      };
+      const parseStemConfig = (dataAkm) => {
+        const cfg = { model: 'PENDULUM', overrides: {} };
+        if (!dataAkm) return cfg;
+        String(dataAkm).split(/[\n,;]/).forEach(line => {
+          const m = line.match(/^\s*([A-Za-z_]+)\s*[:=]\s*(.+?)\s*$/);
+          if (!m) return;
+          const key = m[1].trim().toUpperCase();
+          if (key === 'MODEL') { const mk = m[2].trim().toUpperCase(); if (STEM_MODELS[mk]) cfg.model = mk; }
+          else { const v = parseFloat(String(m[2]).replace(/,/g, '.')); if (!isNaN(v)) cfg.overrides[m[1].trim()] = v; }
+        });
+        return cfg;
+      };
+      const STEMPhysicsLab = ({ soal, value, onChange }) => {
+        const cfg = parseStemConfig(soal.dataAkm);
+        const model = STEM_MODELS[cfg.model] || STEM_MODELS.PENDULUM;
+        const [params, setParams] = useState(() => {
+          const init = { ...model.initial };
+          Object.keys(cfg.overrides).forEach(k => { if (k in init) init[k] = cfg.overrides[k]; });
+          return init;
+        });
+        const hasil = model.compute(params);
+        return (
+          <div className="space-y-3">
+            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700">
+              🧪 Laboratorium Virtual {model.name} — Rumus: <span className="font-mono">{model.formula}</span>. Atur alat ukur, baca hasilnya, lalu ketik jawaban numerik Anda.
+            </div>
+            <div className="bg-slate-900 rounded-xl p-4 text-emerald-300 font-mono text-sm space-y-3">
+              {model.sliders.map(s => (
+                <div key={s.key} className="flex items-center gap-3">
+                  <span className="w-40 text-slate-300">{s.label}</span>
+                  <input type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]}
+                    onChange={e => setParams({ ...params, [s.key]: parseFloat(e.target.value) })}
+                    className="flex-1 accent-emerald-400 cursor-pointer" />
+                  <span className="w-16 text-right text-white font-bold">{params[s.key].toFixed(s.step < 1 ? 2 : 1)}</span>
+                </div>
+              ))}
+              <div className="pt-3 border-t border-slate-700 flex justify-between items-center">
+                <span className="text-slate-300">{model.resultLabel}</span>
+                <span className="text-yellow-300 font-black text-xl">{hasil.toFixed(4)}</span>
+              </div>
+            </div>
+            <input
+              type="text" inputMode="decimal"
+              placeholder="Ketik hasil perhitungan Anda (contoh: 3.14)..."
+              value={value}
+              onChange={e => onChange(e.target.value)}
+              className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-slate-800 text-lg focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+        );
+      };
+
+      const renderOpsiAKM = (currentSoal) => {
+          if (!currentSoal) return null;
+          const tipe = (currentSoal.tipe || 'PG').toUpperCase();
+          const idSoal = currentSoal.id;
+          const currentAns = jawaban[idSoal] || '';
+          const isFromGForm = Boolean(currentSoal.itemId);
+
+          if (tipe === 'PG_KOMPLEKS') {
+              const delimiter = isFromGForm ? '|||' : ',';
+              const selectedArr = currentAns ? String(currentAns).split(delimiter).map(s => s.trim()).filter(Boolean) : [];
+              const selectedSet = new Set(selectedArr);
+              const toggleCheck = (val) => {
+                  if (selectedSet.has(val)) selectedSet.delete(val);
+                  else selectedSet.add(val);
+                  handlePilihJawaban(idSoal, Array.from(selectedSet).join(delimiter));
+              };
+              return (
+                  <div className="space-y-1">
+                    {currentSoal.opsi.map((opsi, i) => {
+                      const prefix = String.fromCharCode(65 + i);
+                      const valStr = isFromGForm ? opsi : `${prefix}. ${opsi}`;
+                      const isChecked = selectedSet.has(valStr) || (!isFromGForm && selectedSet.has(prefix));
+                      return (
+                        <label
+                          key={i}
+                          onClick={(e) => { e.preventDefault(); toggleCheck(valStr); }}
+                          className="w-full text-left py-2 rounded cursor-pointer transition-colors flex gap-3 items-center group"
+                        >
+                          <span className={`w-[18px] h-[18px] flex-shrink-0 flex items-center justify-center rounded-[2px] border-2 transition-all ${isChecked ? 'bg-[#673ab7] border-[#673ab7] text-white' : 'border-[#5f6368] bg-white text-transparent group-hover:border-[#202124]'}`}>
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                          </span>
+                          <div className="text-[14px] text-[#202124] flex-1 overflow-hidden leading-[1.43]">{renderContent(opsi)}</div>
+                        </label>
+                      );
+                    })}
+                  </div>
+              );
+          } else if (tipe === 'DROPDOWN') {
+              return (
+                  <div className="pt-1">
+                    <GFormDropdown
+                      className="w-full sm:w-[220px]"
+                      value={currentAns}
+                      options={currentSoal.opsi || []}
+                      placeholder="Pilih"
+                      onChange={val => handlePilihJawaban(idSoal, val)}
+                      buttonClassName="w-full h-12 px-4 bg-white border border-[#dadce0] hover:border-[#bdc1c6] rounded-[4px] text-[14px] text-[#202124] font-normal focus:border-[#673ab7] outline-none flex items-center justify-between gap-2 text-left"
+                    />
+                  </div>
+              );
+          } else if (tipe === 'GRID' || tipe === 'CHECKBOX_GRID' || (tipe === 'BENAR_SALAH' && isFromGForm)) {
+              const rows = (currentSoal.gridRows && currentSoal.gridRows.length > 0) ? currentSoal.gridRows : (currentSoal.opsi || []);
+              const cols = (currentSoal.gridCols && currentSoal.gridCols.length > 0) ? currentSoal.gridCols : ['Benar', 'Salah'];
+              const isMulti = tipe === 'CHECKBOX_GRID';
+              let gridMap = {};
+              if (currentAns) {
+                  try { gridMap = typeof currentAns === 'object' ? currentAns : JSON.parse(currentAns); } catch(e) {}
+              }
+              const toggleGridCell = (rIdx, colVal) => {
+                  const nextMap = { ...gridMap };
+                  if (isMulti) {
+                      const prevArr = Array.isArray(nextMap[rIdx]) ? [...nextMap[rIdx]] : [];
+                      const pos = prevArr.indexOf(colVal);
+                      if (pos >= 0) prevArr.splice(pos, 1);
+                      else prevArr.push(colVal);
+                      nextMap[rIdx] = prevArr;
+                  } else {
+                      nextMap[rIdx] = colVal;
+                  }
+                  handlePilihJawaban(idSoal, JSON.stringify(nextMap));
+              };
+              return (
+                  <div className="space-y-2">
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr className="bg-white border-b border-slate-200">
+                            <th className="p-3 text-left font-medium text-slate-500 min-w-[160px]"></th>
+                            {cols.map((cLabel, cIdx) => (
+                              <th key={cIdx} className="p-3 text-center font-medium text-slate-700 min-w-[76px]">{cLabel}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {rows.map((rLabel, rIdx) => (
+                            <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-[#f8f9fa]' : 'bg-white'}>
+                              <td className="p-3 text-slate-800 font-normal">{renderContent(rLabel)}</td>
+                              {cols.map((cLabel, cIdx) => {
+                                const isActive = isMulti
+                                  ? (Array.isArray(gridMap[rIdx]) && gridMap[rIdx].includes(cLabel))
+                                  : (gridMap[rIdx] === cLabel);
+                                return (
+                                  <td key={cIdx} className="p-3 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleGridCell(rIdx, cLabel)}
+                                      className="inline-flex items-center justify-center p-1.5 rounded-full hover:bg-purple-100/70 transition-colors"
+                                    >
+                                      {isMulti ? (
+                                        <span className={`w-5 h-5 flex items-center justify-center rounded-[4px] border-2 ${isActive ? 'bg-[#673ab7] border-[#673ab7] text-white' : 'border-slate-500 bg-white text-transparent'}`}>
+                                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </span>
+                                      ) : (
+                                        <span className={`w-5 h-5 flex items-center justify-center rounded-full border-2 ${isActive ? 'border-[#673ab7]' : 'border-slate-500'}`}>
+                                          {isActive && <span className="w-2.5 h-2.5 rounded-full bg-[#673ab7]"></span>}
+                                        </span>
+                                      )}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {Object.keys(gridMap).length > 0 && (
+                      <div className="flex justify-end">
+                        <button type="button" onClick={() => handlePilihJawaban(idSoal, '')} className="text-xs font-medium text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100">
+                          Batalkan pilihan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+              );
+          } else if (tipe === 'BENAR_SALAH') {
+              const statements = currentSoal.opsi.length > 0 ? currentSoal.opsi : (currentSoal.dataAkm ? currentSoal.dataAkm.split('\n') : ['Pernyataan 1', 'Pernyataan 2']);
+              const currentVals = currentAns.split(',').map(s => s.trim());
+              const setStmtVal = (idx, val) => {
+                  const arr = [...currentVals];
+                  while (arr.length < statements.length) arr.push('');
+                  arr[idx] = val;
+                  handlePilihJawaban(idSoal, arr.join(','));
+              };
+              return (
+                  <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-white border-b border-slate-200">
+                          <th className="p-3 text-left font-medium text-slate-600">Pernyataan</th>
+                          <th className="p-3 w-20 text-center font-medium text-slate-700">Benar</th>
+                          <th className="p-3 w-20 text-center font-medium text-slate-700">Salah</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {statements.map((stmt, idx) => {
+                          const val = currentVals[idx] || '';
+                          return (
+                            <tr key={idx} className={idx % 2 === 0 ? 'bg-[#f8f9fa]' : 'bg-white'}>
+                              <td className="p-3 text-slate-800">{renderContent(stmt)}</td>
+                              <td className="p-3 text-center">
+                                <button type="button" onClick={() => setStmtVal(idx, 'B')} className="inline-flex items-center justify-center p-1.5 rounded-full hover:bg-purple-100">
+                                  <span className={`w-5 h-5 flex items-center justify-center rounded-full border-2 ${val === 'B' ? 'border-[#673ab7]' : 'border-slate-500'}`}>
+                                    {val === 'B' && <span className="w-2.5 h-2.5 rounded-full bg-[#673ab7]"></span>}
+                                  </span>
+                                </button>
+                              </td>
+                              <td className="p-3 text-center">
+                                <button type="button" onClick={() => setStmtVal(idx, 'S')} className="inline-flex items-center justify-center p-1.5 rounded-full hover:bg-purple-100">
+                                  <span className={`w-5 h-5 flex items-center justify-center rounded-full border-2 ${val === 'S' ? 'border-[#673ab7]' : 'border-slate-500'}`}>
+                                    {val === 'S' && <span className="w-2.5 h-2.5 rounded-full bg-[#673ab7]"></span>}
+                                  </span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+              );
+          } else if (tipe === 'MENJODOHKAN') {
+              const pairs = currentSoal.opsi.length > 0 ? currentSoal.opsi : (currentSoal.dataAkm ? currentSoal.dataAkm.split('\n') : ['1. Premis A', '2. Premis B']);
+              const currentPairs = currentAns.split(',').map(s => s.trim());
+              const setPairVal = (idx, target) => {
+                  const arr = [...currentPairs];
+                  while (arr.length < pairs.length) arr.push('');
+                  arr[idx] = `${idx+1}-${target}`;
+                  handlePilihJawaban(idSoal, arr.filter(Boolean).join(','));
+              };
+              const getSelectedTarget = (idx) => {
+                  const p = currentPairs[idx] || '';
+                  const m = p.split('-');
+                  return m[1] || '';
+              };
+              return (
+                  <div className="space-y-2">
+                    {pairs.map((item, idx) => (
+                      <div key={idx} className="p-3 bg-[#f8f9fa] border border-slate-200 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                        <span className="text-sm text-slate-800">{renderContent(item)}</span>
+                        <GFormDropdown
+                          className="w-full sm:w-44"
+                          value={getSelectedTarget(idx)}
+                          options={['A','B','C','D','E'].map(opt => ({ value: opt, label: `Opsi ${opt}` }))}
+                          placeholder="Pilih pasangan"
+                          onChange={val => setPairVal(idx, val)}
+                          buttonClassName="w-full px-3 py-2 border border-slate-300 rounded-md font-medium text-sm bg-white focus:border-[#673ab7] outline-none flex items-center justify-between gap-2 text-left"
+                        />
+                      </div>
+                    ))}
+                  </div>
+              );
+          } else if (tipe === 'SCALE') {
+              const min = currentSoal.scaleMin ?? 1;
+              const max = currentSoal.scaleMax ?? 5;
+              const nums = [];
+              for (let n = min; n <= max; n++) nums.push(n);
+              return (
+                  <div className="py-3 px-2 overflow-x-auto">
+                    <div className="flex items-end justify-between gap-2 min-w-[280px]">
+                      {currentSoal.scaleLeftLabel && <span className="text-xs text-slate-600 pb-1.5 max-w-[90px]">{currentSoal.scaleLeftLabel}</span>}
+                      <div className="flex-1 flex items-center justify-around gap-2">
+                        {nums.map(n => {
+                          const isSel = String(currentAns) === String(n);
+                          return (
+                            <button key={n} type="button" onClick={() => handlePilihJawaban(idSoal, String(n))} className="flex flex-col items-center gap-2 p-1.5 rounded-lg hover:bg-purple-50">
+                              <span className="text-xs font-medium text-slate-700">{n}</span>
+                              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSel ? 'border-[#673ab7]' : 'border-slate-500'}`}>
+                                {isSel && <span className="w-2.5 h-2.5 rounded-full bg-[#673ab7]"></span>}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {currentSoal.scaleRightLabel && <span className="text-xs text-slate-600 pb-1.5 max-w-[90px] text-right">{currentSoal.scaleRightLabel}</span>}
+                    </div>
+                  </div>
+              );
+          } else if (tipe === 'ISIAN') {
+              return (
+                  <div className="pt-2">
+                    <input
+                      type="text"
+                      placeholder="Jawaban Anda"
+                      value={currentAns}
+                      onChange={e => handlePilihJawaban(idSoal, e.target.value)}
+                      className="w-full sm:w-2/3 py-2 border-b border-slate-300 focus:border-b-2 focus:border-[#673ab7] bg-transparent text-slate-800 text-[15px] outline-none transition-colors"
+                    />
+                  </div>
+              );
+          } else if (tipe === 'ESAI') {
+              return (
+                  <div className="pt-2">
+                    <textarea
+                      rows="3"
+                      placeholder="Jawaban Anda"
+                      value={currentAns}
+                      onChange={e => handlePilihJawaban(idSoal, e.target.value)}
+                      className="w-full py-2 border-b border-slate-300 focus:border-b-2 focus:border-[#673ab7] bg-transparent text-slate-800 text-[15px] outline-none transition-colors resize-y"
+                    />
+                  </div>
+              );
+          } else if (tipe === 'DATE') {
+              return (
+                  <div className="pt-2">
+                    <input type="date" value={currentAns} onChange={e => handlePilihJawaban(idSoal, e.target.value)} className="px-3 py-2 border-b border-slate-300 focus:border-b-2 focus:border-[#673ab7] bg-transparent text-slate-800 text-sm outline-none" />
+                  </div>
+              );
+          } else if (tipe === 'TIME') {
+              return (
+                  <div className="pt-2">
+                    <input type="time" value={currentAns} onChange={e => handlePilihJawaban(idSoal, e.target.value)} className="px-3 py-2 border-b border-slate-300 focus:border-b-2 focus:border-[#673ab7] bg-transparent text-slate-800 text-sm outline-none" />
+                  </div>
+              );
+          } else if (tipe === 'SIMULASI_LAB') {
+              return (
+                  <STEMPhysicsLab
+                    soal={currentSoal}
+                    value={currentAns}
+                    onChange={(val) => handlePilihJawaban(idSoal, val)}
+                  />
+              );
+          } else {
+              return (
+                  <div className="space-y-1">
+                    {(currentSoal?.opsi || []).map((opsi, i) => {
+                      const prefix = String.fromCharCode(65 + i);
+                      const targetVal = isFromGForm ? opsi : `${prefix}. ${opsi}`;
+                      const isSelected = currentAns === targetVal;
+                      return (
+                        <label
+                          key={i}
+                          onClick={(e) => { e.preventDefault(); handlePilihJawaban(idSoal, targetVal); }}
+                          className="w-full text-left py-2 rounded cursor-pointer transition-colors flex gap-3 items-center group"
+                        >
+                          <span className={`w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-full border-2 transition-all ${isSelected ? 'border-[#673ab7]' : 'border-[#5f6368] group-hover:border-[#202124]'}`}>
+                            {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-[#673ab7]"></span>}
+                          </span>
+                          <div className="text-[14px] text-[#202124] flex-1 overflow-hidden leading-[1.43]">{renderContent(opsi)}</div>
+                        </label>
+                      );
+                    })}
+                    {currentAns && (
+                      <div className="flex justify-end pt-2">
+                        <button type="button" onClick={() => handlePilihJawaban(idSoal, '')} className="text-[14px] font-medium text-[#5f6368] hover:text-[#202124] px-2.5 py-1.5 rounded-[4px] hover:bg-slate-100 transition-colors">
+                          Batalkan pilihan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+              );
+          }
+      };
+
+      const renderViewContent = () => {
+      // RENDER LAYAR
+      if (view === 'login') {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-indigo-600 p-3 sm:p-4 py-8 relative overflow-y-auto">
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-indigo-500 rounded-b-[100%] blur-3xl transform -translate-y-1/2"></div>
+            <div className="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-md relative z-10">
+              
+              <div className="text-center mb-6">
+                {appSettings.logo_sekolah && (
+                    <img src={appSettings.logo_sekolah} alt="Logo Sekolah" className="h-20 w-auto mx-auto object-contain mb-3" />
+                )}
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">{appSettings.nama_instansi}</h3>
+                <h2 className="text-lg font-black text-indigo-700 uppercase">{appSettings.nama_sekolah}</h2>
+              </div>
+              <div className="w-full h-px bg-slate-200 mb-6"></div>
+              <div className="text-center mb-6"><p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Aplikasi Ujian CBT</p></div>
+
+              {errorMessage && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm font-bold rounded-xl border border-rose-200 text-center">{errorMessage}</div>}
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Nomor Induk (NIS / Username)</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input type="text" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 text-sm" value={loginForm.nis} onChange={e => setLoginForm({...loginForm, nis: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Password Login</label>
+                  <div className="relative">
+                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required 
+                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 text-sm" 
+                      value={loginForm.password} 
+                      onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                      title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <button disabled={isLoading} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 mt-2">
+                  {isLoading ? 'Memverifikasi...' : 'MASUK UJIAN'}
+                </button>
+              </form>
+
+            </div>
+          </div>
+        );
+      }
+
+      if (view === 'intro') {
+        return (
+          <div className="min-h-screen bg-slate-100 py-4 sm:py-6 px-3 sm:px-4 pb-44 overflow-y-auto">
+            <div className="max-w-2xl mx-auto bg-white p-5 sm:p-8 rounded-3xl shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200">
+              
+              {/* HEADER LOGO & INFO SEKOLAH */}
+              <div className="flex items-center justify-between border-b pb-4 mb-5">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {appSettings.logo_sekolah && (
+                        <img src={appSettings.logo_sekolah} alt="Logo" className="h-12 sm:h-16 w-auto object-contain" />
+                    )}
+                    <div>
+                      <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">{appSettings.nama_instansi}</h3>
+                      <h2 className="text-base sm:text-lg font-black text-indigo-700 uppercase leading-tight">{appSettings.nama_sekolah}</h2>
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Konfirmasi Sesi & Tata Tertib</p>
+                    </div>
+                  </div>
+                  <button onClick={handleSiswaLogout} className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-full transition-colors flex-shrink-0" title="Keluar / Ganti Akun">
+                      <LogOut size={18} />
+                  </button>
+              </div>
+
+              {resumeMessage && (
+                  <div className="mb-5 p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-start gap-3">
+                      <Info className="text-indigo-600 mt-0.5 flex-shrink-0" size={18}/>
+                      <p className="text-xs sm:text-sm text-indigo-800 font-bold">{resumeMessage}</p>
+                  </div>
+              )}
+
+              {errorMessage && (
+                  <div className="mb-5 p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-2.5">
+                      <div className="flex items-start gap-2.5 text-rose-700">
+                          <AlertTriangle className="mt-0.5 flex-shrink-0" size={18}/>
+                          <p className="text-xs sm:text-sm font-bold">{errorMessage}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => user && fetchSoal(user.kelas, user.mapel || appSettings.nama_ujian, user.nis, user.gformLink ? (user.gformLink.formUrl || user.gformLink.formId) : '', user)}
+                        className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5"
+                      >
+                        <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''}/> Muat Ulang Soal
+                      </button>
+                  </div>
+              )}
+
+              {/* GRID INFO PESERTA & UJIAN */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mb-5">
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-2.5">
+                  <h4 className="font-bold text-indigo-600 text-xs uppercase tracking-wider border-b pb-2 mb-1 flex items-center gap-1.5"><User size={14}/> Profil Peserta</h4>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Nama Siswa</span><span className="font-black text-slate-800 text-right">{user?.nama}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">NIS / Username</span><span className="font-bold text-slate-700">{user?.nis}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Kelas / Ruang</span><span className="font-bold text-slate-700">{user?.kelas} {selectedRuang ? `(${selectedRuang})` : (user?.ruang ? `(${user.ruang})` : '')}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Sesi Aktif</span><span className="font-bold text-slate-700">Sesi {user?.sesi}</span></div>
+                </div>
+
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-2.5">
+                  <h4 className="font-bold text-indigo-600 text-xs uppercase tracking-wider border-b pb-2 mb-1 flex items-center gap-1.5"><FileText size={14}/> Informasi Ujian</h4>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Mata Pelajaran</span><span className="font-black text-indigo-700 text-right">{appSettings.nama_ujian}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Sisa Waktu Anda</span><span className="font-bold text-rose-600">{formatTime(timeLeft)}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Jumlah Soal</span><span className="font-bold text-slate-700">{isLoading ? 'Memuat...' : `${soalList.filter(it => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(it.tipe)).length} Butir`}</span></div>
+                  <div className="flex justify-between text-xs sm:text-sm"><span className="text-slate-500 font-semibold">Keamanan Ujian</span><span className="font-bold text-emerald-600">{appSettings.acak_soal === 'Ya' ? 'Acak' : 'Standar'} | {isAndroidDevice || isAndroidApk ? 'Lockdown Mode Android' : (appSettings.ujian_ketat === 'Ya' ? 'Lockdown Ketat' : 'Reguler')}</span></div>
+                </div>
+              </div>
+
+              {/* PILIH RUANG UJIAN (RUANG 1 s/d 14) SEBELUM MASUK GOOGLE FORM */}
+              <div className={`p-4 sm:p-5 rounded-2xl border-2 mb-5 transition-all ${selectedRuang ? 'bg-emerald-50/70 border-emerald-400' : 'bg-indigo-50 border-indigo-300'}`}>
+                <div className="flex items-start sm:items-center justify-between gap-2 mb-2.5">
+                  <label className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                    <MapPin size={17} className={selectedRuang ? 'text-emerald-600' : 'text-indigo-600'} />
+                    Pilih Ruang Ujian Anda <span className="text-rose-600">*</span>
+                  </label>
+                  {selectedRuang ? (
+                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white">✓ {selectedRuang}</span>
+                  ) : (
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">Wajib Dipilih</span>
+                  )}
+                </div>
+                <select
+                  value={selectedRuang}
+                  onChange={(e) => handleSelectRuangSiswa(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border-2 border-indigo-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                >
+                  <option value="">-- Pilih Ruang Ujian (Ruang 1 s/d Ruang 14) --</option>
+                  {Array.from({ length: 14 }, (_, idx) => `Ruang ${idx + 1}`).map(rm => (
+                    <option key={rm} value={rm}>{rm}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-600 font-medium mt-2">
+                  Pilihan ruang ini langsung muncul di dasbor pengawas Proktor untuk pemantauan live.
+                </p>
+              </div>
+
+              {/* PERINGATAN LOCKDOWN MODE & PAKTA INTEGRITAS */}
+              <div className="bg-rose-50 border border-rose-200 p-4 sm:p-5 rounded-2xl mb-6">
+                <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider border-b border-rose-200 pb-2 mb-2 flex items-center gap-1.5">
+                  <Lock size={14}/> Lockdown Mode Android &amp; Tata Tertib Ujian
+                </h4>
+                <ul className="text-xs text-rose-900 space-y-1.5 list-disc pl-4 font-medium leading-relaxed">
+                  <li><b>Lockdown Mode Aktif:</b> Dilarang keras melakukan <b>Split Screen</b>, membuka <b>Floating Aplikasi</b>, menarik panel <b>Notifikasi</b>, atau melakukan <b>Screenshot / Rekam Layar</b>.</li>
+                  <li><b>Alarm Sirine Otomatis:</b> Jika siswa mencoba <i>Split Screen</i> atau membuka jendela mengambang, <b>alarm sirine berbunyi keras</b> dan pelanggaran langsung tercatat di Proktor.</li>
+                  <li>Sistem mengikat perangkat HP / laptop Anda ke akun ini serta mengaktifkan kamera verifikasi (Anti-Joki).</li>
+                  <li>Sistem memiliki fitur <b>Auto-Save otomatis</b>. Jawaban Anda tetap aman tersimpan jika koneksi terganggu.</li>
+                </ul>
+              </div>
+
+              {/* KOTAK PERSETUJUAN DI DALAM KONTEN (BISA DIKLIK LANGSUNG) */}
+              <div 
+                onClick={() => setIsAgreed(!isAgreed)} 
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-3.5 mb-4 select-none ${
+                  isAgreed ? 'bg-indigo-50 border-indigo-600 text-indigo-950 shadow-sm' : 'bg-slate-50 border-slate-300 text-slate-700 hover:border-indigo-400'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 transition-colors ${
+                  isAgreed ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-white border-2 border-slate-400 text-transparent'
+                }`}>
+                  ✓
+                </div>
+                <div className="flex-1">
+                  <span className="text-xs sm:text-sm font-black block leading-tight">SAYA SIAP MENGIKUTI UJIAN DENGAN JUJUR</span>
+                  <span className="text-[10px] sm:text-xs text-slate-500 font-medium">Ketuk di sini untuk menyetujui pakta integritas ujian</span>
+                </div>
+              </div>
+
+              {/* TOMBOL LANJUTKAN INLINE */}
+              <button 
+                onClick={() => {
+                  if (!selectedRuang) return alert("Harap pilih Ruang Ujian Anda terlebih dahulu (Ruang 1 - Ruang 14) sebelum masuk ke soal!");
+                  if (!isAgreed) setIsAgreed(true);
+                  startUjian();
+                }}
+                className={`w-full py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2 shadow-xl transition-all active:scale-[0.98] ${
+                  !selectedRuang
+                    ? 'bg-slate-400 hover:bg-slate-500 text-white cursor-pointer'
+                    : isAgreed 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                }`}
+              >
+                <span>{selectedRuang ? 'LANJUTKAN KE SOAL UJIAN' : 'PILIH RUANG TERLEBIH DAHULU'}</span> <ArrowRight size={22}/>
+              </button>
+            </div>
+
+            {/* STICKY BOTTOM FLOATING BAR (MEMASTIKAN TOMBOL SELALU ADA DI LAYAR HP TANPA PERLU MENCARI) */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 p-3 sm:p-4 shadow-[0_-8px_25px_rgba(0,0,0,0.12)]">
+              <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <div 
+                  onClick={() => setIsAgreed(!isAgreed)} 
+                  className={`flex items-center gap-2.5 px-3 py-2 sm:p-3 rounded-xl border cursor-pointer select-none transition-all w-full sm:w-auto ${
+                    isAgreed ? 'bg-indigo-50 border-indigo-500 text-indigo-900' : 'bg-slate-100 border-slate-300 text-slate-600'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                    isAgreed ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-400 text-transparent'
+                  }`}>✓</div>
+                  <span className="text-xs font-black truncate">Saya Siap Mengikuti Ujian</span>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    if (!selectedRuang) return alert("Harap pilih Ruang Ujian Anda terlebih dahulu (Ruang 1 - Ruang 14) sebelum masuk ke soal!");
+                    if (!isAgreed) setIsAgreed(true);
+                    startUjian();
+                  }}
+                  className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all flex-shrink-0 ${
+                    selectedRuang ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200' : 'bg-slate-400 hover:bg-slate-500 text-white'
+                  }`}
+                >
+                  <span>{selectedRuang ? 'LANJUTKAN UJIAN' : 'PILIH RUANG DULU'}</span> <ArrowRight size={18}/>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (view === 'ujian') {
+        const sectionsList = (gformMeta && gformMeta.sections && gformMeta.sections.length > 0)
+          ? gformMeta.sections
+          : [{ index: 0, title: appSettings.nama_ujian || 'Ujian Berbasis Komputer', description: '' }];
+        const totalSections = sectionsList.length;
+        const currentSecIdx = Math.max(0, Math.min(activeSection, totalSections - 1));
+        const currentSecMeta = sectionsList[currentSecIdx] || sectionsList[0];
+        const filteredBySec = soalList.filter(it => (it.sectionIndex || 0) === currentSecIdx);
+        const visibleItems = (filteredBySec.length > 0) ? filteredBySec : soalList;
+        const answerableSoal = soalList.filter(it => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(it.tipe));
+        const answeredCount = answerableSoal.filter(it => {
+          const val = jawaban[it.id];
+          return val !== undefined && val !== null && String(val).trim() !== '' && String(val) !== '{}';
+        }).length;
+        const formTitle = (gformMeta && gformMeta.formTitle) ? gformMeta.formTitle : (appSettings.nama_ujian || 'Ujian Sekolah');
+        const formDesc = (gformMeta && gformMeta.formDescription) ? gformMeta.formDescription : `${appSettings.nama_sekolah} • Mata Pelajaran: ${appSettings.nama_ujian} • Jawaban tersimpan otomatis ke Google Form & Server Sekolah.`;
+
+        return (
+          <div className="min-h-screen flex flex-col bg-[#f0ebf8] relative" style={{ fontFamily: "'Roboto', Arial, sans-serif" }}>
+            
+            <video ref={videoRef} className="hidden" autoPlay playsInline muted></video>
+
+            {/* OVERLAY LOCKDOWN MODE: SPLIT SCREEN / FLOATING APP / NOTIFIKASI / SCREENSHOT + ALARM */}
+            {cheatWarning && (
+                <div className="fixed inset-0 z-[9999] bg-rose-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200 prevent-select">
+                    <div className="w-20 h-20 rounded-full bg-rose-600/30 border-2 border-rose-400 flex items-center justify-center mb-5 animate-bounce">
+                      <Volume2 size={44} className="text-rose-200 animate-pulse" />
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black uppercase tracking-wider mb-3">
+                      <Lock size={13}/> LOCKDOWN MODE TERPICU {isAlarmPlaying ? '• ALARM BERBUNYI' : ''}
+                    </span>
+                    <h2 className="text-2xl sm:text-4xl font-black text-white mb-3">PERINGATAN PELANGGARAN UJIAN!</h2>
+                    <p className="text-amber-200 text-sm sm:text-base font-bold max-w-lg mb-2">
+                      {lockdownViolationMsg || 'Sistem mendeteksi percobaan Split Screen, Floating App, Notifikasi, atau keluar dari Lockdown Mode.'}
+                    </p>
+                    <p className="text-rose-200 text-xs sm:text-sm max-w-lg mb-7 font-medium">
+                      Tutup fitur <b>Split Screen / Floating Window</b> terlebih dahulu. Kejadian ini <b>telah tercatat otomatis di dashboard Proktor</b>.
+                    </p>
+                    <button onClick={() => {
+                      const scrW = (window.screen && window.screen.width) || 0;
+                      const scrH = (window.screen && window.screen.height) || 0;
+                      let inMulti = false;
+                      try { inMulti = Boolean(window.AndroidExambro?.isInMultiWindow?.()); } catch (e) {}
+                      if (inMulti || (isAndroidDevice && ((scrW > 0 && window.outerWidth < scrW * 0.84) || (scrH > 0 && window.outerHeight < scrH * 0.72)))) {
+                        startLockdownAlarm('Masih dalam Split Screen');
+                        return alert('Split Screen / Floating App masih aktif! Tutup dulu agar layar penuh kembali.');
+                      }
+                      stopLockdownAlarm();
+                      setCheatWarning(false);
+                      setLockdownViolationMsg('');
+                      try { window.AndroidExambro?.startLockdown?.(); } catch (e) {}
+                      if ((appSettings.kiosk_mode === 'Ya' || appSettings.ujian_ketat === 'Ya') && document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                      }
+                    }} className="px-7 py-4 bg-white text-rose-700 font-black rounded-2xl hover:bg-rose-50 transition-colors shadow-2xl text-sm sm:text-base">
+                        Matikan Alarm &amp; Kembali ke Lockdown Mode
+                    </button>
+                </div>
+            )}
+
+            {/* OVERLAY ANTI-CURANG: KELUAR FULLSCREEN */}
+            {fullscreenWarning && !cheatWarning && (
+                <div className="fixed inset-0 z-[9998] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                    <Lock size={72} className="text-amber-400 mb-5 animate-bounce" />
+                    <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">LOCKDOWN LAYAR PENUH TERHENTI</h2>
+                    <p className="text-slate-200 text-sm sm:text-base max-w-md mb-7">Ujian menggunakan Lockdown Mode. Anda wajib mengaktifkan Layar Penuh untuk melanjutkan soal.</p>
+                    <button onClick={() => {
+                      stopLockdownAlarm();
+                      setFullscreenWarning(false);
+                      try { window.AndroidExambro?.startLockdown?.(); } catch (e) {}
+                      if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                      }
+                    }} className="px-7 py-3.5 bg-[#673ab7] hover:bg-[#5e35b1] text-white font-bold rounded-xl shadow-lg">
+                        Aktifkan Lockdown Mode &amp; Lanjutkan
+                    </button>
+                </div>
+            )}
+
+            {/* BAR STATUS MINIMALIS: LOCKDOWN MODE & TIMER */}
+            <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#dadce0] px-3 sm:px-6 py-2 shadow-[0_1px_2px_rgba(60,64,67,0.1)] prevent-select">
+              <div className="max-w-[640px] mx-auto flex justify-between items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-bold rounded-full shrink-0">
+                    <Lock size={10}/> {isAndroidDevice || isAndroidApk ? 'Lockdown Android' : 'Lockdown'}
+                  </span>
+                  <span className="text-xs font-medium text-[#5f6368] truncate">{user?.nama} &bull; {user?.kelas}</span>
+                  {appSettings.ai_face_liveness === 'Ya' && (
+                    <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded hidden sm:inline-block ${faceStatus.includes('Normal') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-100 text-rose-700 animate-pulse'}`}>
+                      {faceStatus}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="hidden sm:flex items-center bg-[#f1f3f4] p-0.5 rounded-md gap-0.5">
+                    <button type="button" onClick={() => setFontSize(prev => Math.max(13, prev - 1))} className="p-1 hover:bg-white text-[#5f6368] rounded" title="Perkecil Huruf"><ZoomOut size={13} /></button>
+                    <button type="button" onClick={() => setFontSize(prev => Math.min(22, prev + 1))} className="p-1 hover:bg-white text-[#5f6368] rounded" title="Perbesar Huruf"><ZoomIn size={13} /></button>
+                  </div>
+
+                  {appSettings.coretan !== 'Tidak' && (
+                    <button type="button" onClick={() => setShowPad(!showPad)} className={`p-1.5 rounded-md border text-xs ${showPad ? 'bg-[#673ab7] text-white border-[#673ab7]' : 'bg-white text-[#5f6368] border-[#dadce0] hover:bg-slate-50'}`} title="Kertas Coretan"><Palette size={14} /></button>
+                  )}
+
+                  <div className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md text-[#d93025] font-mono font-bold text-xs">
+                    {formatTime(timeLeft)}
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* MAIN AUTHENTIC GOOGLE FORM LAYOUT (LEBAR STANDAR 640PX, TANPA NOMOR SOAL) */}
+            <main
+              className="flex-1 w-full max-w-[640px] mx-auto px-3 pt-4 pb-16 space-y-3"
+              onCopy={(e) => { if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) e.preventDefault(); }}
+              onCut={(e) => { if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) e.preventDefault(); }}
+              onPaste={(e) => { if (appSettings.ujian_ketat === 'Ya') e.preventDefault(); }}
+            >
+              {/* KARTU JUDUL GOOGLE FORM */}
+              <div className="bg-white rounded-lg border border-[#dadce0] overflow-hidden">
+                <div className="h-[10px] bg-[#673ab7] w-full"></div>
+                <div className="px-6 pt-5 pb-4 space-y-2.5">
+                  <h1 className="text-[24px] sm:text-[32px] font-normal text-[#202124] leading-[1.25] tracking-[-0.01em]">{formTitle}</h1>
+                  {formDesc && (
+                    <p className="text-[14px] text-[#202124] whitespace-pre-line leading-[1.43]">{formDesc}</p>
+                  )}
+                </div>
+                <div className="px-6 py-3 border-t border-[#dadce0] flex flex-wrap items-center justify-between gap-2 text-[13px] text-[#5f6368]">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-medium text-[#3c4043]">{user?.nama}</span>
+                    <span>({user?.nis} &bull; {user?.kelas})</span>
+                    <span className="inline-flex items-center gap-1 ml-1">
+                      <GFormDropdown
+                        className="w-36"
+                        value={detectedGFormRuang || selectedRuang || ''}
+                        options={Array.from({ length: 14 }, (_, idx) => `Ruang ${idx + 1}`)}
+                        placeholder="-- Pilih Ruang --"
+                        onChange={(v) => {
+                          handleSelectRuangSiswa(v);
+                          if (user && v && typeof google !== 'undefined' && google.script) {
+                            const totalAns = (soalListRef.current || []).filter(q => !['SECTION_HEADER', 'IMAGE', 'VIDEO'].includes(q.tipe)).length;
+                            google.script.run.saveJawabanSementara(user.nis, JSON.stringify(jawabanRef.current), timeLeftRef.current, v, totalAns);
+                          }
+                        }}
+                        buttonClassName={`w-full px-2 py-0.5 rounded border text-[11px] font-medium outline-none cursor-pointer flex items-center justify-between gap-1 ${
+                          (detectedGFormRuang || selectedRuang)
+                            ? 'bg-purple-50 border-purple-300 text-[#673ab7]'
+                            : 'bg-amber-50 border-amber-300 text-amber-800'
+                        }`}
+                      />
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[12px] text-[#5f6368]">
+                    <CheckCircle size={13} className="text-[#5f6368]" /> Tersimpan
+                  </span>
+                </div>
+                <div className="px-6 py-3 border-t border-[#dadce0] text-[14px] text-[#d93025]">
+                  * Menunjukkan pertanyaan yang wajib diisi
+                </div>
+              </div>
+
+              {/* BANNER BAGIAN (JIKA GOOGLE FORM MEMILIKI MULTI-SECTION) */}
+              {totalSections > 1 && currentSecIdx > 0 && (
+                <div className="rounded-lg border border-[#dadce0] bg-white overflow-hidden">
+                  <div className="bg-[#673ab7] text-white px-6 py-3 text-[16px] font-normal">
+                    {stripGFormLeadingNumber(currentSecMeta.title)}
+                  </div>
+                  {currentSecMeta.description && (
+                    <div className="px-6 py-4 text-[14px] text-[#202124] whitespace-pre-line leading-[1.43]">{currentSecMeta.description}</div>
+                  )}
+                </div>
+              )}
+
+              {/* KARTU JIKA SOAL KOSONG / GAGAL DIMUAT */}
+              {visibleItems.length === 0 && (
+                <div className="bg-white rounded-lg border border-[#dadce0] p-6 text-center space-y-3">
+                  <AlertTriangle size={36} className="text-[#d93025] mx-auto" />
+                  <h3 className="text-base font-medium text-[#202124]">Soal Ujian Belum Tampil</h3>
+                  <p className="text-xs sm:text-sm text-[#5f6368] max-w-md mx-auto">
+                    {errorMessage || 'Tidak ada butir soal yang berhasil dimuat dari Google Form / Bank Soal untuk kelas dan mata pelajaran Anda.'}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => user && fetchSoal(user.kelas, user.mapel || appSettings.nama_ujian, user.nis, user.gformLink ? (user.gformLink.formUrl || user.gformLink.formId) : '', user)}
+                      className="px-5 py-2 bg-[#673ab7] hover:bg-[#5e35b1] text-white rounded-[4px] text-sm font-medium inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''}/> Muat Ulang Soal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView('intro')}
+                      className="px-4 py-2 bg-white border border-[#dadce0] hover:bg-slate-50 text-[#5f6368] rounded-[4px] text-sm font-medium"
+                    >
+                      Kembali
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* DAFTAR KARTU PERTANYAAN GAYA GOOGLE FORM ASLI (TANPA NOMOR SOAL) */}
+              {visibleItems.map((q) => {
+                const globalIdx = soalList.findIndex(x => x.id === q.id);
+                const cleanTitle = stripGFormLeadingNumber(q.text);
+
+                if (q.tipe === 'SECTION_HEADER') {
+                  return (
+                    <div key={q.id} className="bg-white rounded-lg border border-[#dadce0] overflow-hidden">
+                      <div className="bg-[#673ab7] text-white px-6 py-3 text-[16px] font-normal">
+                        {cleanTitle}
+                      </div>
+                      {q.helpText && (
+                        <div className="px-6 py-4 text-[14px] text-[#202124] whitespace-pre-line leading-[1.43]">{q.helpText}</div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (q.tipe === 'IMAGE' || q.tipe === 'VIDEO') {
+                  return (
+                    <div key={q.id} className="bg-white rounded-lg border border-[#dadce0] p-6">
+                      {cleanTitle && <h4 className="text-[16px] font-normal text-[#202124] mb-2">{cleanTitle}</h4>}
+                      {q.helpText && <p className="text-[12px] text-[#5f6368] mb-3">{q.helpText}</p>}
+                      {q.imageDataUrl && (
+                        <div className="flex justify-center">
+                          <img src={q.imageDataUrl} alt={cleanTitle || 'Gambar'} className="max-w-full max-h-96 rounded object-contain" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const isMissingError = missingRequiredId === q.id;
+
+                return (
+                  <div
+                    key={q.id}
+                    id={`soal-card-${globalIdx}`}
+                    className={`bg-white rounded-lg border p-6 transition-colors prevent-select focus-within:border-l-[6px] focus-within:border-l-[#4285f4] ${
+                      isMissingError ? 'border-[#d93025]' : 'border-[#dadce0]'
+                    }`}
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div className="text-[#202124] font-normal leading-[1.5] flex-1" style={{ fontSize: `${fontSize}px` }}>
+                        {renderContent(cleanTitle)}
+                        {q.isRequired && <span className="text-[#d93025] ml-1">*</span>}
+                      </div>
+                    </div>
+                    {q.helpText && (
+                      <p className="text-[12px] text-[#5f6368] -mt-1.5 mb-3 whitespace-pre-line">{q.helpText}</p>
+                    )}
+                    {q.imageDataUrl && (
+                      <div className="my-3 flex justify-center">
+                        <img src={q.imageDataUrl} alt="Gambar" className="max-w-full max-h-72 rounded object-contain" />
+                      </div>
+                    )}
+                    <div className="mt-1">
+                      {renderOpsiAKM(q)}
+                    </div>
+                    {isMissingError && (
+                      <div className="mt-3 pt-2 flex items-center gap-1.5 text-[#d93025] text-[12px] font-normal">
+                        <AlertTriangle size={15} className="shrink-0" />
+                        <span>Pertanyaan ini wajib diisi</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* BAR NAVIGASI & TOMBOL KIRIM GAYA GOOGLE FORM ASLI */}
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                  {currentSecIdx > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setActiveSection(prev => Math.max(0, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className="px-6 py-2 bg-white hover:bg-slate-50 text-[#673ab7] border border-[#dadce0] rounded-[4px] font-medium text-[14px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition-colors"
+                    >
+                      Kembali
+                    </button>
+                  )}
+
+                  {currentSecIdx < totalSections - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => { setActiveSection(prev => Math.min(totalSections - 1, prev + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className="px-6 py-2 bg-white hover:bg-purple-50/50 text-[#673ab7] border border-[#dadce0] rounded-[4px] font-medium text-[14px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition-colors"
+                    >
+                      Berikutnya
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => handleSubmitUjian(false)}
+                      className="px-6 py-2 bg-[#673ab7] hover:bg-[#5e35b1] text-white rounded-[4px] font-medium text-[14px] shadow-[0_1px_2px_rgba(60,64,67,0.3)] transition-all disabled:opacity-50"
+                    >
+                      {isLoading ? 'Mengirim...' : 'Kirim'}
+                    </button>
+                  )}
+                </div>
+
+                {totalSections > 1 && (
+                  <div className="flex items-center gap-3 flex-1 sm:max-w-[240px]">
+                    <div className="flex-1 h-2.5 bg-[#dadce0] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#1e8e3e] transition-all duration-300"
+                        style={{ width: `${Math.round(((currentSecIdx + 1) / totalSections) * 100)}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-[14px] text-[#202124] font-normal whitespace-nowrap">
+                      Halaman {currentSecIdx + 1} dari {totalSections}
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirmModal(true)}
+                  className="text-[14px] font-medium text-[#673ab7] hover:bg-purple-100/60 px-2 py-1.5 rounded-[4px] transition-colors"
+                >
+                  Kosongkan formulir
+                </button>
+              </div>
+            </main>
+
+            {/* MODAL KONFIRMASI KIRIM JAWABAN (IN-PAGE AGAR TIDAK MEMICU BLUR/ALARM) */}
+            {showSubmitConfirmModal && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] px-5">
+                <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border-t-4 border-[#673ab7]">
+                  <h3 className="text-lg font-extrabold text-slate-900 mb-2">Kirim Jawaban Ujian?</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
+                    Apakah Anda yakin ingin mengirim jawaban ujian sekarang? Jawaban akan direkam ke Google Form &amp; Server Sekolah dan Lockdown Mode akan dimatikan secara otomatis.
+                  </p>
+                  <div className="flex justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowSubmitConfirmModal(false)}
+                      className="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSubmitConfirmModal(false);
+                        handleSubmitUjian(false, true);
+                      }}
+                      className="px-5 py-2 rounded-lg text-xs sm:text-sm font-bold text-white bg-[#673ab7] hover:bg-[#5e35b1] shadow-md"
+                    >
+                      Ya, Kirim Jawaban
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL KONFIRMASI KOSONGKAN FORMULIR */}
+            {showClearConfirmModal && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] px-5">
+                <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border-t-4 border-rose-500">
+                  <h3 className="text-lg font-extrabold text-slate-900 mb-2">Kosongkan Formulir?</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
+                    Semua pilihan jawaban yang sudah Anda isi pada formulir ujian ini akan dihapus.
+                  </p>
+                  <div className="flex justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowClearConfirmModal(false)}
+                      className="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setJawaban({});
+                        setShowClearConfirmModal(false);
+                      }}
+                      className="px-5 py-2 rounded-lg text-xs sm:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700"
+                    >
+                      Ya, Kosongkan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL POPUP: VIRTUAL SCRATCHPAD */}
+            {showPad && (
+              <div className="fixed bottom-16 right-4 w-80 h-96 bg-white border-2 border-[#673ab7] shadow-2xl rounded-2xl z-50 overflow-hidden flex flex-col">
+                  <div className="p-3 bg-[#673ab7] text-white font-bold text-xs flex justify-between items-center flex-none">
+                     <span className="flex items-center gap-1.5"><Palette size={14}/> Virtual Scratchpad</span>
+                     <div className="flex gap-2">
+                        <button onClick={clearCanvas} className="px-2 py-0.5 bg-purple-900 rounded hover:bg-purple-950 text-[10px]">Clear</button>
+                        <button onClick={() => setShowPad(false)} className="text-white hover:text-rose-200 font-bold">X</button>
+                     </div>
+                  </div>
+                  <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                     <canvas 
+                        ref={canvasRef} 
+                        width="320" 
+                        height="380"
+                        onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
+                        className="w-full h-full cursor-crosshair touch-none"
+                     />
+                  </div>
+              </div>
+            )}
+
+            {showTimeWarning ? (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110] px-5">
+                <div className="bg-white rounded-[2rem] w-full md:max-w-md p-6 md:p-8 text-center shadow-2xl border-4 border-rose-500">
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-5"><AlertTriangle size={32} className="text-rose-600 md:w-10 md:h-10" /></div>
+                  <h3 className="text-lg md:text-2xl font-black text-slate-800 mb-2">Peringatan Waktu!</h3>
+                  <p className="text-slate-600 text-xs md:text-sm font-medium mb-6 md:mb-8 leading-relaxed">Waktu pengerjaan ujian Anda tersisa kurang dari <b className="text-rose-600 text-base">10 Menit</b>. Harap segera periksa kembali jawaban Anda.</p>
+                  <button onClick={() => setShowTimeWarning(false)} className="w-full py-3 md:py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl md:rounded-2xl text-sm md:text-base transition-all shadow-lg shadow-rose-200">
+                    Saya Mengerti, Kembali ke Soal
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {isLoading && submitStatusText && (
+              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center modal-overlay p-6 text-center">
+                <div className="w-16 h-16 border-4 border-purple-200 border-t-[#673ab7] rounded-full animate-spin mb-6"></div>
+                <h3 className="text-white text-xl font-bold mb-2">Mengirim Jawaban Ujian...</h3>
+                <p className="text-purple-200 max-w-md text-sm font-medium animate-pulse">{submitStatusText}</p>
+                <div className="mt-8 p-4 bg-slate-900 border border-slate-800 rounded-2xl max-w-sm text-left">
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Status Keamanan</p>
+                  <p className="text-xs text-slate-400 leading-relaxed font-semibold">Jawaban Anda direkam secara aman ke Google Form dan Spreadsheet Sekolah. Jangan tutup layar ini sampai proses selesai.</p>
+                </div>
+              </div>
+            )}
+
+          </div>
+        );
+      }
+
+      if (view === 'selesai') {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(err => console.log(err));
+        }
+
+        return (
+          <div className="min-h-screen flex items-start justify-center bg-[#f0ebf8] px-3 pt-6 pb-16 relative overflow-hidden" style={{ fontFamily: "'Roboto', Arial, sans-serif" }}>
+            <div className="bg-white rounded-lg border border-[#dadce0] w-full max-w-[640px] overflow-hidden relative z-10">
+              <div className="h-[10px] bg-[#673ab7]"></div>
+              <div className="px-6 py-6 text-left">
+                <h1 className="text-[24px] sm:text-[32px] font-normal text-[#202124] mb-3 leading-tight">{(gformMeta && gformMeta.formTitle) ? gformMeta.formTitle : (appSettings.nama_ujian || 'Formulir Ujian')}</h1>
+                <p className="text-[#202124] text-[14px] font-normal mb-5">Jawaban Anda telah direkam.</p>
+                {offlineQueueCount > 0 ? (
+                    <div className="p-3.5 bg-amber-50 rounded border border-amber-200 mb-4">
+                        <p className="text-xs font-medium text-amber-800 flex items-center gap-1.5">
+                            <RefreshCw size={14} className="animate-spin"/> Menyinkronkan {offlineQueueCount} antrean ke server...
+                        </p>
+                    </div>
+                ) : (
+                    <p className="text-xs font-medium text-[#1e8e3e] mb-4 flex items-center gap-1.5">
+                        <CheckCircle size={15}/> Tersimpan ke Google Form &amp; Database Sekolah
+                    </p>
+                )}
+                <p className="text-xs text-[#5f6368]">Anda dapat menutup halaman atau aplikasi ini sekarang.</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+      };
+      return (
+        <div className="relative min-h-screen">
+          {renderViewContent()}
+          <Footer />
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

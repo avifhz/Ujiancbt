@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" id="pwa-manifest">
+
+  <title>CBT - Portal Pengawas / Proktor</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1",
+        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.378.0?deps=react@18.3.1,react-dom@18.3.1"
+      }
+    }
+  </script>
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .z-max { z-index: 9999; }
+  </style>
+  <script>
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      document.write('<script src="./gas-config.js"><\/script><script src="./gas-bridge.js"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen overflow-x-hidden overflow-y-auto">
+  <div id="root"></div>
+
+  <script>
+    const manifest = {
+        name: "CBT Proktor Pengawas",
+        short_name: "Proktor CBT",
+        display: "standalone",
+        background_color: "#f8fafc",
+        theme_color: "#4f46e5",
+        icons: [{"src": "https://cdn-icons-png.flaticon.com/512/3135/3135679.png", "sizes": "512x512", "type": "image/png"}]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+  </script>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { Users, Activity, Unlock, RefreshCw, LogOut, CheckCircle, AlertCircle, ShieldAlert, MonitorPlay, XCircle, Key, FileText, Eye, EyeOff, Camera, Mic, Monitor, UserCheck, MapPin } from 'lucide-react';
+
+    // ===== FOOTER SECURITY - INTEGRITY GUARD (ANTI-TAMPER) =====
+    const _F = (() => {
+        const H = '4372656174656420616e642044657369676e206279204a6573736520522e4e696b696a756c75772c2053542e';
+        let t = '';
+        for (let i = 0; i < H.length; i += 2)
+            t += String.fromCharCode(parseInt(H.substring(i, i+2), 16));
+        return t;
+    })();
+    const _hA = '87709f63';
+    const _hB = '753dfc15';
+    const _footerHash = _hA + _hB;
+    const _breakApp = (code) => {
+        try {
+            const r = document.getElementById('root');
+            if (r) r.innerHTML = '';
+            document.title = 'APLIKASI DINONAKTIFKAN - INTEGRITAS TERGANGGU';
+        } catch(e) {}
+        throw new Error('Integritas aplikasi terganggu (Kode: ' + code + ')');
+    };
+    const _verifyFooter = (() => {
+        let _armed = false;
+        let _miss = 0;
+        setInterval(() => {
+            try {
+                const el = document.getElementById('app-footer');
+                if (!el) { if (_armed || ++_miss >= 5) return _breakApp('E01'); return; }
+                const txt = (el.textContent || '').trim();
+                if (!txt.includes(_F)) { if (_armed || ++_miss >= 5) return _breakApp('E02'); return; }
+                let h1 = 0x811c9dc5, h2 = 0x01000193;
+                for (let i = 0; i < txt.length; i++) {
+                    const c = txt.charCodeAt(i);
+                    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+                    h2 = Math.imul(h2 ^ c, 0x01000193) >>> 0;
+                }
+                const hash = ('00000000' + h1.toString(16)).slice(-8) + ('00000000' + h2.toString(16)).slice(-8);
+                if (hash !== _footerHash) { if (_armed || ++_miss >= 5) return _breakApp('E03'); return; }
+                _armed = true;
+                _miss = 0;
+            } catch(e) {}
+        }, 10000);
+        return () => {};
+    })();
+
+    const Footer = () => {
+        
+        return (
+            <div id="app-footer" className="text-center text-[10px] font-bold text-slate-400 leading-relaxed px-2 py-2 border-t border-slate-200/60">
+                &copy; 2026 Created and Design by Jesse R.Nikijuluw, ST. All rights reserved.
+            </div>
+        );
+    };
+
+    const App = () => {
+      const [isLoggedIn, setIsLoggedIn] = useState(() => {
+          return localStorage.getItem('cbt_proktor_session') !== null;
+      });
+      const [proktorName, setProktorName] = useState(() => {
+          const session = localStorage.getItem('cbt_proktor_session');
+          return session ? JSON.parse(session).nama : '';
+      });
+
+      const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+      const [isLoading, setIsLoading] = useState(false);
+      const [isSyncing, setIsSyncing] = useState(false);
+      
+      const [dataSiswa, setDataSiswa] = useState([]);
+      const [dataLog, setDataLog] = useState([]);
+      const [dataJadwal, setDataJadwal] = useState([]);
+      const [dataFoto, setDataFoto] = useState([]); 
+      const [dataRuang, setDataRuang] = useState({});
+      const [dataProgress, setDataProgress] = useState({});
+      const [filterKelas, setFilterKelas] = useState('Semua');
+      const [filterRuang, setFilterRuang] = useState('');
+      const [filterStatus, setFilterStatus] = useState('Semua');
+      const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
+      const [actionStatus, setActionStatus] = useState('');
+      const [showPassword, setShowPassword] = useState(false);
+
+      const [appSettings, setAppSettings] = useState({
+          nama_instansi: 'KEMENTERIAN PENDIDIKAN',
+          nama_sekolah: 'NAMA SEKOLAH',
+          logo_sekolah: '',
+          token: ''
+      });
+
+      useEffect(() => {
+          if (typeof google !== 'undefined' && google.script) {
+              google.script.run.withSuccessHandler((res) => {
+                  if(res.success && res.data) setAppSettings(prev => ({...prev, ...res.data}));
+              }).getAppSettings();
+          }
+
+          if (isLoggedIn) {
+              fetchDashboardData();
+          }
+      }, []);
+
+      useEffect(() => {
+          let poll;
+          if (isLoggedIn) {
+              poll = setInterval(() => {
+                  if (typeof google !== 'undefined' && google.script) {
+                      google.script.run.withSuccessHandler((res) => {
+                          if (res.success) {
+                              setDataSiswa(res.data.siswa || []);
+                              setDataLog(res.data.log || []);
+                              setDataFoto(res.data.foto || []);
+                              if (res.data.ruangMap) setDataRuang(res.data.ruangMap);
+                              if (res.data.progressMap) setDataProgress(res.data.progressMap);
+                          }
+                      }).getProktorDashboardData();
+                  }
+              }, 5000); 
+          }
+          return () => clearInterval(poll);
+      }, [isLoggedIn]);
+
+      const showToast = (msg, type = 'success') => {
+        setToast({ show: true, msg, type });
+        setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 4000);
+      };
+
+      const executeWithRetry = (actionName, params, successMsg, attempt = 1) => {
+        setIsSyncing(true);
+        const maxAttempts = 5;
+        const delay = attempt * 2000;
+
+        if(attempt > 1) setActionStatus(`Antrean sibuk. Mengulang perintah... (${attempt}/${maxAttempts})`);
+
+        if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res.success) {
+                        showToast(successMsg || res.message);
+                        if (actionName === 'updateTokenUjian') setAppSettings(prev => ({...prev, token: params[0]}));
+                        fetchDashboardData();
+                        setActionStatus('');
+                    } else if (res.message && res.message.includes('Padat') && attempt < maxAttempts) {
+                        setTimeout(() => executeWithRetry(actionName, params, successMsg, attempt + 1), delay);
+                    } else {
+                        showToast(res.message, 'error');
+                        setIsSyncing(false);
+                        setActionStatus('');
+                    }
+                })
+                .withFailureHandler(() => {
+                    if (attempt < maxAttempts) {
+                        setTimeout(() => executeWithRetry(actionName, params, successMsg, attempt + 1), delay);
+                    } else {
+                        showToast("Koneksi server sibuk/gagal. Harap coba beberapa detik lagi.", 'error');
+                        setIsSyncing(false);
+                        setActionStatus('');
+                    }
+                })
+                [actionName](...params);
+        } else {
+            setIsSyncing(false);
+            setActionStatus('');
+        }
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        if (typeof google !== 'undefined' && google.script) {
+          google.script.run
+            .withSuccessHandler((res) => {
+              if (res.success) {
+                setProktorName(res.nama);
+                setIsLoggedIn(true);
+                localStorage.setItem('cbt_proktor_session', JSON.stringify({ nama: res.nama }));
+                fetchDashboardData();
+              } else {
+                showToast(res.message, 'error');
+              }
+              setIsLoading(false);
+            })
+            .withFailureHandler((err) => {
+              showToast("Gagal terhubung ke server.", "error");
+              setIsLoading(false);
+            })
+            .loginProktor(loginForm.username, loginForm.password);
+        } else {
+          setIsLoading(false);
+          showToast('Bukan di env Google Apps Script', 'error');
+        }
+      };
+
+      const handleLogout = () => {
+          if(window.confirm("Apakah Anda yakin ingin keluar dari dasbor pengawas?")) {
+              localStorage.removeItem('cbt_proktor_session');
+              setIsLoggedIn(false);
+              setProktorName('');
+          }
+      };
+
+      const fetchDashboardData = (attempt = 1) => {
+        setIsSyncing(true);
+        if (typeof google !== 'undefined' && google.script) {
+          google.script.run
+            .withSuccessHandler((res) => {
+              if (res.success) {
+                setDataSiswa(res.data.siswa || []);
+                setDataLog(res.data.log || []);
+                setDataJadwal(res.data.jadwal || []);
+                setDataFoto(res.data.foto || []);
+                setDataRuang(res.data.ruangMap || {});
+                setDataProgress(res.data.progressMap || {});
+                if (res.data.settings) {
+                    setAppSettings(prev => ({...prev, ...res.data.settings}));
+                }
+                setIsSyncing(false);
+              } else {
+                if(attempt < 4) setTimeout(() => fetchDashboardData(attempt + 1), 2000);
+                else { showToast("Gagal merefresh data.", "error"); setIsSyncing(false); }
+              }
+            })
+            .withFailureHandler(() => {
+              if(attempt < 4) setTimeout(() => fetchDashboardData(attempt + 1), 2000);
+              else { showToast("Gagal merefresh data jaringan.", "error"); setIsSyncing(false); }
+            })
+            .getProktorDashboardData();
+        }
+      };
+
+      const handleImporLJKHybrid = () => {
+        const nis = prompt("Masukkan NIS Siswa yang mengerjakan di Lembar Jawaban Kertas (LJK OMR):");
+        if (!nis) return;
+        const siswaFound = dataSiswa.find(s => String(s[0]).trim() === String(nis).trim());
+        const nama = siswaFound ? siswaFound[1] : prompt("Masukkan Nama Siswa:", "Siswa Hybrid");
+        const score = prompt(`Masukkan Skor Hasil Scan / Koreksi LJK untuk NIS ${nis} (${nama}):`, "80");
+        if (score === null) return;
+
+        setIsSyncing(true);
+        google.script.run
+          .withSuccessHandler((res) => {
+             setIsSyncing(false);
+             if (res && res.success) {
+                 showToast(res.message);
+                 fetchDashboardData();
+             } else showToast(res?.message || "Gagal simpan LJK", "error");
+          })
+          .withFailureHandler(() => { setIsSyncing(false); showToast("Gagal koneksi server", "error"); })
+          .submitJawabanHybridLJK(nis, nama, appSettings.token || 'HYBRID-OMR', score, 'Selesai (OMR Kertas)', '{}', 'Ujian Kertas (Hybrid CBT)');
+      };
+
+      const handleUnlockSiswa = (nis) => {
+          executeWithRetry('unlockSiswa', [nis], `Sesi login & kunci perangkat NIS ${nis} berhasil di-reset.`);
+      };
+
+      const handleForceSelesai = (nis) => {
+        if(!window.confirm(`Yakin ingin mematikan ujian untuk NIS ${nis}? Ujian siswa akan disubmit otomatis (Jawaban sementara diselamatkan).`)) return;
+        executeWithRetry('forceSelesaiUjian', [nis], `Ujian siswa NIS ${nis} berhasil dimatikan paksa.`);
+      };
+
+      const handleRefreshToken = () => {
+        if(!window.confirm("Buat Token Ujian Baru? Semua siswa yang sedang menunggu login harus menggunakan token ini.")) return;
+        const randomToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+        executeWithRetry('updateTokenUjian', [randomToken], `Token berhasil diperbarui: ${randomToken}`);
+      };
+
+      const getMyTaskInfo = () => {
+        if (dataJadwal.length === 0) return null;
+        const myJadwal = dataJadwal.find(j => j[9] && j[9].toString().toLowerCase() === proktorName.toLowerCase());
+        return myJadwal || null;
+      };
+
+      const normNisExact = (v) => String(v || '').trim().replace(/^'+/, '').toLowerCase();
+      const normNisNoZero = (v) => String(v || '').trim().replace(/^'+/, '').replace(/^0+(?=\d)/, '').toLowerCase();
+      const isSameNis = (a, b) => {
+        const ea = normNisExact(a);
+        const eb = normNisExact(b);
+        if (!ea || !eb) return false;
+        return ea === eb || normNisNoZero(ea) === normNisNoZero(eb);
+      };
+
+      const getStudentPhoto = (nis) => {
+         const match = [...dataFoto].reverse().find(f => isSameNis(f[1], nis));
+         return match ? match[3] : null; 
+      };
+
+      const normalizeRoomName = (val) => {
+        let s = String(val || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[-_.]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .replace(/\b0+(\d+)/g, '$1');
+        // Jika siswa hanya menulis "1", "01", "r1", atau "r 1", samakan menjadi "ruang 1"
+        const numOnly = s.match(/^(?:r\s*)?(\d+)$/i);
+        if (numOnly) return 'ruang ' + numOnly[1];
+        const ruangNum = s.match(/^ruang\s*(\d+)$/i);
+        if (ruangNum) return 'ruang ' + ruangNum[1];
+        return s;
+      };
+
+      const matchRoomQuery = (studentRoom, query) => {
+        if (!query) return true;
+        if (query === '__BELUM_ISI__') return !String(studentRoom || '').trim();
+        const q = normalizeRoomName(query);
+        if (!q) return true;
+        const r = normalizeRoomName(studentRoom);
+        if (!r) return false;
+        return r === q;
+      };
+
+      const defaultRuang1To14 = Array.from({ length: 14 }, (_, idx) => `Ruang ${idx + 1}`);
+      const formatPrettyRoom = (val) => {
+        const clean = String(val || '').trim();
+        if (!clean) return '';
+        const norm = normalizeRoomName(clean);
+        const m = norm.match(/^ruang (\d+)$/);
+        return m ? `Ruang ${parseInt(m[1], 10)}` : clean;
+      };
+      const ruangByNisKey = {};
+      Object.entries(dataRuang || {}).forEach(([k, v]) => {
+        const exactK = normNisExact(k);
+        const noZeroK = normNisNoZero(k);
+        const prettyV = formatPrettyRoom(v);
+        if (exactK && prettyV) {
+          ruangByNisKey[exactK] = prettyV;
+          if (noZeroK) ruangByNisKey[noZeroK] = prettyV;
+        }
+      });
+      const progressByNisKey = {};
+      Object.entries(dataProgress || {}).forEach(([k, v]) => {
+        const exactK = normNisExact(k);
+        const noZeroK = normNisNoZero(k);
+        if (exactK && v) {
+          progressByNisKey[exactK] = v;
+          if (noZeroK) progressByNisKey[noZeroK] = v;
+        }
+      });
+      const getStudentRoom = (nis) => ruangByNisKey[normNisExact(nis)] || ruangByNisKey[normNisNoZero(nis)] || '';
+      const getStudentProgress = (nis) => progressByNisKey[normNisExact(nis)] || progressByNisKey[normNisNoZero(nis)] || null;
+
+      // Samakan daftar Ruang 1 s/d Ruang 14 persis seperti CBT Siswa (ditambah ruang lain hanya jika siswa benar-benar menginput di CBT)
+      const rawRoomSources = [
+        ...defaultRuang1To14,
+        ...Object.values(ruangByNisKey)
+      ];
+      const uniqueRoomsMap = new Map();
+      rawRoomSources.forEach(rawVal => {
+        const clean = String(rawVal || '').trim();
+        if (!clean || /^ruang$/i.test(clean) || /^semua$/i.test(clean) || clean === '-') return;
+        const norm = normalizeRoomName(clean);
+        if (norm && !uniqueRoomsMap.has(norm)) {
+          const prettyRuang = norm.match(/^ruang (\d+)$/);
+          uniqueRoomsMap.set(norm, prettyRuang ? `Ruang ${parseInt(prettyRuang[1], 10)}` : clean);
+        }
+      });
+      const listRuang = Array.from(uniqueRoomsMap.values()).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+
+      const cleanStudentsList = Array.isArray(dataSiswa) ? dataSiswa.filter(s => s && s[0] && String(s[0]).trim().toUpperCase() !== 'NIS') : [];
+      const listKelas = ['Semua', ...new Set(cleanStudentsList.map(s => s[2]).filter(Boolean))];
+      const studentsMatchingKelas = cleanStudentsList.filter(s => filterKelas === 'Semua' || s[2] === filterKelas);
+      const countNoRoom = studentsMatchingKelas.filter(s => !getStudentRoom(s[0])).length;
+      const populatedRoomsSummary = listRuang
+        .map(rm => {
+          const inRoom = studentsMatchingKelas.filter(s => matchRoomQuery(getStudentRoom(s[0]), rm));
+          const liveInRoom = inRoom.filter(s => s[5] === 'Sedang Ujian').length;
+          return { room: rm, total: inRoom.length, live: liveInRoom };
+        })
+        .filter(item => item.total > 0);
+      const studentsMatchingRoom = studentsMatchingKelas.filter(s => {
+        const studentRoom = getStudentRoom(s[0]);
+        return matchRoomQuery(studentRoom, filterRuang);
+      });
+      const liveStudents = studentsMatchingRoom.filter(s => s[5] === 'Sedang Ujian');
+      const filteredStudents = studentsMatchingRoom.filter(s => {
+        if (filterStatus === 'Live') return s[5] === 'Sedang Ujian';
+        if (filterStatus === 'Selesai') return s[5] === 'Selesai';
+        if (filterStatus === 'Offline') return !s[5] || (s[5] !== 'Sedang Ujian' && s[5] !== 'Selesai');
+        return true;
+      });
+      const countOnline = liveStudents.length;
+      const countDone = studentsMatchingRoom.filter(s => s[5] === 'Selesai').length;
+      const formatShortTime = (secs) => {
+        const s = parseInt(secs, 10) || 0;
+        if (s <= 0) return '-';
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        return `${m}m ${String(r).padStart(2, '0')}s`;
+      };
+
+      if (!isLoggedIn) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-900 p-5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-indigo-900/30 rounded-b-[100%] blur-3xl transform -translate-y-1/2"></div>
+            
+            <div className="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-sm border-t-8 border-indigo-600 relative z-10">
+              
+              <div className="text-center mb-6">
+                {appSettings.logo_sekolah && (
+                    <img src={appSettings.logo_sekolah} alt="Logo" className="h-16 w-auto mx-auto object-contain mb-3" />
+                )}
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{appSettings.nama_instansi}</h3>
+                <h2 className="text-sm font-black text-indigo-700 uppercase">{appSettings.nama_sekolah}</h2>
+              </div>
+
+              <div className="w-full h-px bg-slate-200 mb-6"></div>
+
+              <div className="flex flex-col items-center justify-center mx-auto mb-4 text-slate-700"><MonitorPlay size={28} /></div>
+              <h2 className="text-xl font-black text-center text-slate-800 mb-1">Login Proktor</h2>
+              <p className="text-center text-xs text-slate-500 mb-6 font-medium">Portal Pengawasan Ujian CBT</p>
+              
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Username Pengawas</label>
+                  <input type="text" required className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold text-slate-700" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Password</label>
+                  <div className="relative mt-1">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required 
+                      className="w-full px-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold text-slate-700" 
+                      value={loginForm.password} 
+                      onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                      title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <button disabled={isLoading} className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                  {isLoading ? <RefreshCw className="animate-spin" size={18} /> : 'Masuk Dashboard'}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-slate-100 pt-4">
+                <Footer />
+              </div>
+            </div>
+            
+            {toast.show && (
+              <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-rose-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg z-max flex items-center gap-2">
+                <AlertCircle size={18} /> {toast.msg}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const myTask = getMyTaskInfo();
+
+      return (
+        <div className="h-screen flex flex-col bg-slate-100 overflow-hidden relative">
+          <header className="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md z-10 flex-none">
+            <div className="flex items-center gap-4">
+              {appSettings.logo_sekolah && (
+                  <img src={appSettings.logo_sekolah} alt="Logo" className="h-10 w-auto bg-white p-1 rounded-lg" />
+              )}
+              <div>
+                <h1 className="font-black text-lg leading-tight uppercase">{appSettings.nama_sekolah}</h1>
+                <p className="text-xs text-indigo-200 font-medium">Portal Proktor: {proktorName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              {actionStatus && <span className="text-xs font-bold text-amber-300 animate-pulse hidden md:inline">{actionStatus}</span>}
+              <button onClick={handleImporLJKHybrid} disabled={isSyncing} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-white/20 mr-2" title="Impor Lembar Jawaban Kertas (LJK OMR)">
+                📄 Impor LJK Kertas
+              </button>
+              <button onClick={() => fetchDashboardData(1)} disabled={isSyncing} className="p-2 bg-indigo-500/50 hover:bg-indigo-500 rounded-full transition-colors" title="Refresh Data">
+                <RefreshCw size={20} className={isSyncing ? "animate-spin" : ""} />
+              </button>
+              <button onClick={handleLogout} className="p-2 bg-rose-500/30 text-rose-100 hover:bg-rose-500 hover:text-white rounded-full transition-colors" title="Keluar / Logout">
+                <LogOut size={20} />
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 w-full max-w-6xl mx-auto">
+            
+            <div className="flex flex-col md:flex-row gap-4">
+                
+                <div className="flex-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><FileText size={14}/> Informasi Penugasan Sesi Ini</p>
+                    {myTask ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[10px] text-slate-500 uppercase font-bold">Proktor Utama</p>
+                                <p className="font-black text-sm text-indigo-700">{proktorName}</p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[10px] text-slate-500 uppercase font-bold">Pengawas Ruang</p>
+                                <p className="font-black text-sm text-emerald-700">{myTask[10] || '-'}</p>
+                            </div>
+                            <div className="col-span-2 flex flex-wrap gap-x-6 gap-y-2 text-sm font-bold text-slate-700 mt-1">
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-lg">📍 Ruang: {myTask[3]} (Kelas {myTask[2]})</span>
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-lg">⏱️ Sesi {myTask[4]}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm font-medium text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center gap-2">
+                           <AlertCircle size={18}/> Anda belum ditugaskan di jadwal manapun oleh Admin saat ini.
+                        </p>
+                    )}
+                </div>
+
+                <div className="flex-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                            <Key size={24} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Token Ujian Aktif</p>
+                            <h2 className="text-3xl font-black text-indigo-600 tracking-widest font-mono">{appSettings.token || 'KOSONG'}</h2>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={handleRefreshToken}
+                        disabled={isSyncing}
+                        className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} /> Refresh Token Baru
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 flex-none">
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 text-center">Total Peserta {filterRuang ? `(${filterRuang === '__BELUM_ISI__' ? 'Belum Isi Ruang' : filterRuang})` : ''}</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-700">{studentsMatchingRoom.length}</h2>
+              </div>
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-200 flex flex-col items-center justify-center">
+                <p className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 text-center flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Mengerjakan</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-emerald-600">{countOnline}</h2>
+              </div>
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+                <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1 text-center">Selesai</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-indigo-600">{countDone}</h2>
+              </div>
+            </div>
+
+            {/* MENU RUANG & LIVE SISWA MENGERJAKAN */}
+            <div className="bg-white rounded-2xl shadow-sm border border-indigo-200 p-4 space-y-4 flex-none">
+              <div className="bg-indigo-50/80 border border-indigo-200/80 rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+                    <MapPin size={19} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-indigo-900 uppercase tracking-wide">Menu Ruang Ujian (Live Drop-Down)</p>
+                    <p className="text-[11px] text-indigo-700 font-medium">Sama dengan CBT Siswa (Ruang 1 - Ruang 14). Nomor ruang siswa otomatis muncul saat dipilih di CBT Siswa.</p>
+                  </div>
+                </div>
+
+                <div className="flex-1 max-w-md">
+                  <select
+                    value={filterRuang}
+                    onChange={(e) => setFilterRuang(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white border-2 border-indigo-300 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                  >
+                    <option value="">-- Semua Ruang ({studentsMatchingKelas.length} Siswa) --</option>
+                    {listRuang.map(rm => {
+                      const inRoom = studentsMatchingKelas.filter(s => matchRoomQuery(getStudentRoom(s[0]), rm));
+                      const liveInRoom = inRoom.filter(s => s[5] === 'Sedang Ujian').length;
+                      return (
+                        <option key={rm} value={rm}>
+                          {rm} ({inRoom.length} Siswa{liveInRoom > 0 ? ` • ${liveInRoom} Live` : ''})
+                        </option>
+                      );
+                    })}
+                    {countNoRoom > 0 && (
+                      <option value="__BELUM_ISI__">Belum Mengisi Ruang ({countNoRoom} Siswa)</option>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* NOMOR RUANGAN OTOMATIS MUNCUL DARI INPUT CBT SISWA */}
+              <div className="flex flex-wrap items-center gap-2 px-1">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider mr-1">Ruang Aktif Terisi:</span>
+                {populatedRoomsSummary.length > 0 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setFilterRuang('')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${!filterRuang ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                    >
+                      Semua ({studentsMatchingKelas.length})
+                    </button>
+                    {populatedRoomsSummary.map(item => {
+                      const active = filterRuang === item.room;
+                      return (
+                        <button
+                          key={item.room}
+                          type="button"
+                          onClick={() => setFilterRuang(active ? '' : item.room)}
+                          className={`px-3 py-1 rounded-lg text-xs font-black border transition-all flex items-center gap-1.5 ${
+                            active
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                          }`}
+                        >
+                          <MapPin size={12} />
+                          <span>{item.room}</span>
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] ${active ? 'bg-white/20 text-white' : 'bg-white text-emerald-700 border border-emerald-200'}`}>
+                            {item.total} Siswa{item.live > 0 ? ` • ${item.live} Live` : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <span className="text-xs font-medium text-slate-400 italic">
+                    Belum ada siswa yang memilih nomor ruang di CBT Siswa (otomatis muncul begitu siswa memilih Ruang 1 - Ruang 14).
+                  </span>
+                )}
+              </div>
+
+              {/* LIVE SISWA MENGERJAKAN */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-black">
+                      <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span> LIVE
+                    </span>
+                    Siswa Sedang Mengerjakan {filterRuang ? `— ${filterRuang === '__BELUM_ISI__' ? 'Belum Mengisi Ruang' : filterRuang}` : '(Semua Ruang)'}
+                  </h3>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
+                    {liveStudents.length} Siswa Aktif Live
+                  </span>
+                </div>
+
+                {liveStudents.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                    {liveStudents.map((s, idx) => {
+                      const sNis = String(s[0] || '').trim();
+                      const sRoom = getStudentRoom(sNis);
+                      const sPhoto = getStudentPhoto(sNis);
+                      const sProg = getStudentProgress(sNis);
+                      const sCheat = dataLog.filter(l => isSameNis(l[1], sNis) && l[3] !== 'Login' && l[3] !== 'Selesai' && l[3] !== 'Reset').length;
+                      return (
+                        <div key={idx} className="p-3 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/60 to-white shadow-sm flex items-center gap-3">
+                          {sPhoto ? (
+                            <img src={sPhoto} alt={s[1]} className="w-12 h-12 rounded-xl object-cover border-2 border-emerald-500 shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                              <Activity size={20} className="animate-pulse" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="font-black text-sm text-slate-800 truncate">{s[1]}</p>
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-600 text-white shrink-0">LIVE</span>
+                            </div>
+                            <p className="text-[11px] font-semibold text-slate-500 truncate">NIS: {sNis} &bull; {s[2]}</p>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded ${sRoom ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+                                <MapPin size={10} /> {sRoom || 'Belum isi ruang'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                                {sProg ? `${sProg.answeredCount}${sProg.totalSoal ? '/' + sProg.totalSoal : ''} Soal` : 'Aktif Ujian'}
+                              </span>
+                              {sProg && sProg.timeLeft > 0 && (
+                                <span className="text-[10px] font-bold text-amber-700">{formatShortTime(sProg.timeLeft)}</span>
+                              )}
+                              {sCheat > 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">{sCheat} Alert</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-300 text-center text-xs text-slate-500 font-medium">
+                    Belum ada siswa yang berstatus <b>Sedang Ujian</b>{filterRuang ? ` di ${filterRuang === '__BELUM_ISI__' ? 'kategori Belum Mengisi Ruang' : filterRuang}` : ''} saat ini.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden min-h-[380px]">
+              <div className="p-4 border-b border-slate-100 bg-slate-50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 flex-none">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="font-bold text-slate-700 flex items-center gap-2"><Users size={18} className="text-indigo-500"/> Daftar Peserta Ujian</h3>
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Live Sync 5 Detik
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                    {[
+                      { id: 'Semua', label: 'Semua' },
+                      { id: 'Live', label: 'Live Mengerjakan' },
+                      { id: 'Selesai', label: 'Selesai' },
+                      { id: 'Offline', label: 'Offline' }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setFilterStatus(tab.id)}
+                        className={`px-2.5 py-1 rounded-lg transition-colors ${filterStatus === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <select 
+                    className="px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:border-indigo-500 bg-white"
+                    value={filterKelas} onChange={(e) => setFilterKelas(e.target.value)}
+                  >
+                    {listKelas.map(k => <option key={k} value={k}>{k === 'Semua' ? 'Semua Kelas' : `Kelas ${k}`}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-white sticky top-0 z-10 shadow-sm border-b">
+                    <tr>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Foto Bukti</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">NIS</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nama Siswa</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Kelas</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Ruang</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Progres Live</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Kecurangan / Pindah Tab</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Status Ujian</th>
+                      <th className="py-3 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Aksi Pengawas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredStudents.map((siswa, i) => {
+                      const nis = String(siswa[0] || '').trim();
+                      const status = siswa[5] || 'Offline';
+                      const isUjian = status === 'Sedang Ujian';
+                      const prog = getStudentProgress(nis);
+                      const studentRoomLabel = getStudentRoom(nis);
+                      
+                      const userLogsCheat = dataLog.filter(l => isSameNis(l[1], nis) && l[3] === 'Pelanggaran');
+                      const userLogsVoice = dataLog.filter(l => isSameNis(l[1], nis) && l[3] === 'Pelanggaran Suara');
+                      const userLogsFullscreen = dataLog.filter(l => isSameNis(l[1], nis) && (l[3] === 'Pelanggaran Fullscreen' || l[3] === 'Keluar Fullscreen'));
+                      const userLogsFace = dataLog.filter(l => isSameNis(l[1], nis) && (l[3] === 'Anomali Wajah' || l[3] === 'Wajah Tidak Terdeteksi'));
+
+                      const userLogsGaze = dataLog.filter(l => isSameNis(l[1], nis) && l[3] === 'Anomali Arah Pandang / Kepala');
+                      const cheatCount = userLogsCheat.length;
+                      const voiceCount = userLogsVoice.length;
+                      const fullscreenCount = userLogsFullscreen.length;
+                      const faceCount = userLogsFace.length;
+                      const gazeCount = userLogsGaze.length;
+
+                      const photoUrl = getStudentPhoto(nis);
+
+                      return (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-6">
+                             {photoUrl ? (
+                               <div className="w-12 h-12 rounded-full overflow-visible border-2 border-indigo-500 shadow-sm relative group cursor-pointer">
+                                  <img src={photoUrl} className="w-full h-full object-cover rounded-full" alt="Webcam" />
+                                  <div className="absolute left-14 top-0 w-48 h-36 bg-black rounded-xl border-4 border-indigo-500 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                                      <img src={photoUrl} className="w-full h-full object-cover" />
+                                      <div className="absolute bottom-0 left-0 w-full bg-black/60 text-white text-[10px] text-center p-1">Live Cam Siswa</div>
+                                  </div>
+                               </div>
+                             ) : (
+                               <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                                  <Camera size={18} />
+                               </div>
+                             )}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-sm text-slate-600">{siswa[0]}</td>
+                          <td className="py-3 px-4 font-medium text-sm text-slate-800">{siswa[1]}</td>
+                          <td className="py-3 px-4 text-sm text-slate-500">{siswa[2]}</td>
+                          <td className="py-3 px-4 text-sm">
+                            {studentRoomLabel ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 text-white shadow-sm font-black text-xs whitespace-nowrap">
+                                <MapPin size={11} /> {studentRoomLabel}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium">Belum Pilih</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {isUjian ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                  {prog ? `${prog.answeredCount}${prog.totalSoal ? '/' + prog.totalSoal : ''} Soal` : 'Mulai...'}
+                                </span>
+                                {prog && prog.timeLeft > 0 && (
+                                  <span className="text-[10px] font-bold text-slate-500">{formatShortTime(prog.timeLeft)}</span>
+                                )}
+                              </div>
+                            ) : status === 'Selesai' ? (
+                              <span className="text-xs font-bold text-indigo-600">Terkirim</span>
+                            ) : (
+                              <span className="text-xs text-slate-300">-</span>
+                            )}
+                          </td>
+                          
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex flex-col items-center gap-1">
+                                {cheatCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-[11px] font-bold animate-pulse border border-rose-200">
+                                        <ShieldAlert size={12}/> {cheatCount}x Pindah Tab
+                                    </span>
+                                )}
+                                {fullscreenCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md text-[11px] font-bold border border-amber-200">
+                                        <Monitor size={12}/> {fullscreenCount}x Keluar Kiosk
+                                    </span>
+                                )}
+                                {voiceCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-md text-[11px] font-bold border border-purple-200">
+                                        <Mic size={12}/> {voiceCount}x Suara Bising
+                                    </span>
+                                )}
+                                {faceCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold border border-blue-200">
+                                        <UserCheck size={12}/> {faceCount}x Anomali Wajah
+                                    </span>
+                                )}
+                                {gazeCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md text-[11px] font-bold border border-amber-200">
+                                        <Eye size={12}/> {gazeCount}x Lirik/Kepala
+                                    </span>
+                                )}
+                                {cheatCount === 0 && voiceCount === 0 && fullscreenCount === 0 && faceCount === 0 && gazeCount === 0 && (
+                                    <span className="text-xs text-slate-300 font-medium">- Aman -</span>
+                                )}
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${isUjian ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : status === 'Selesai' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {isUjian && <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>}
+                              {isUjian ? 'Live Mengerjakan' : status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-2">
+                                <button 
+                                onClick={() => handleUnlockSiswa(siswa[0])}
+                                disabled={!isUjian || isSyncing}
+                                className={`p-2 rounded-lg transition-colors flex items-center justify-center ${
+                                    isUjian ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed border-transparent'
+                                }`}
+                                title="Bebaskan Sesi Login & Kunci Perangkat Siswa"
+                                >
+                                <Unlock size={16} />
+                                </button>
+                                
+                                <button 
+                                onClick={() => handleForceSelesai(siswa[0])}
+                                disabled={!isUjian || isSyncing}
+                                className={`p-2 rounded-lg transition-colors flex items-center justify-center ${
+                                    isUjian ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed border-transparent'
+                                }`}
+                                title="Hentikan Paksa / Matikan Ujian"
+                                >
+                                <XCircle size={16} />
+                                </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredStudents.length === 0 && (
+                        <tr><td colSpan="9" className="text-center py-10 text-slate-400">
+                          {filterRuang ? `Tidak ada peserta ujian ditemukan di ruang "${filterRuang === '__BELUM_ISI__' ? 'Belum Mengisi Ruang' : filterRuang}".` : 'Tidak ada peserta ujian di filter ini.'}
+                        </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </main>
+
+          {toast.show && (
+            <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-max flex items-center gap-3 animate-in slide-in-from-bottom-5">
+              {toast.type === 'success' ? <CheckCircle className="text-emerald-400" /> : <AlertCircle className="text-rose-400" />}
+              <span className="font-medium text-sm">{toast.msg}</span>
+            </div>
+          )}
+
+          <Footer />
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
